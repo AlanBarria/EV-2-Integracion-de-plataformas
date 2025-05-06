@@ -1,0 +1,42 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Iniciar Sesión</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'tu_app/login.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+    <div class="login-content">
+        <div class="login-container">
+            <i class="login-icon fas fa-user-circle"></i>
+            <h3 class="welcome-title">Inicio de Sesión</h3>
+            <p class="subtitle">Bienvenido de nuevo. Por favor, inicia sesión.</p>
+
+            {% if messages %}
+                <ul style="color: red;">
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+
+            <form method="post" class="login-form">
+                {% csrf_token %}
+                <div class="input-item">
+                    <input type="text" name="username" placeholder="Usuario" required>
+                </div>
+                <div class="input-item">
+                    <input type="password" name="password" placeholder="Contraseña" required>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="login-button">Ingresar</button>
+                    <a href="{% url 'registro' %}" class="register-button">Registrarse</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
