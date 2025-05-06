@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ferremas - Herramientas</title>
+</head>
+<body>
+    <h1>Lista de Herramientas</h1>
+
+    <ul>
+        {% for herramienta in herramientas %}
+            <li>
+                <strong>{{ herramienta.nombre }}</strong> - ${{ herramienta.precio }}<br>
+                {{ herramienta.descripcion }}<br>
+                {% if herramienta.imagen %}
+                    <img src="{{ herramienta.imagen.url }}" alt="{{ herramienta.nombre }}" width="150">
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

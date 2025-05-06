@@ -1,0 +1,28 @@
+<h1>Administración de Herramientas</h1>
+
+<h2>{% if form.instance.pk %}Editar{% else %}Crear{% endif %} Herramienta</h2>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    {% if form.instance.pk %}
+        <input type="hidden" name="editar_id" value="{{ form.instance.pk }}">
+    {% endif %}
+    <button type="submit">Guardar</button>
+</form>
+
+<hr>
+
+<h2>Lista de Herramientas</h2>
+<ul>
+    {% for herramienta in herramientas %}
+        <li>
+            <strong>{{ herramienta.nombre }}</strong> - ${{ herramienta.precio }} - Stock: {{ herramienta.stock }}
+            {% if herramienta.imagen %}
+                <br><img src="{{ herramienta.imagen.url }}" alt="Imagen" width="100">
+            {% endif %}
+            <br>
+            <a href="?editar_id={{ herramienta.id }}">Editar</a> |
+            <a href="?eliminar_id={{ herramienta.id }}" onclick="return confirm('¿Eliminar esta herramienta?')">Eliminar</a>
+        </li>
+    {% endfor %}
+</ul>
