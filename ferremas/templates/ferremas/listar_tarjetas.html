@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tarjetas Guardadas</title>
+</head>
+<body>
+    <h1>Tarjetas Guardadas (Modo Prueba)</h1>
+    <table border="1">
+        <tr>
+            <th>Últimos 4 dígitos</th>
+            <th>Fecha Expiración</th>
+            <th>Guardado</th>
+            <th>Acción</th>
+        </tr>
+        {% for tarjeta in tarjetas %}
+        <tr>
+            <td>{{ tarjeta.numero|slice:"-4:" }}</td>
+            <td>{{ tarjeta.fecha_expiracion }}</td>
+            <td>{{ tarjeta.fecha_guardado }}</td>
+            <td><a href="{% url 'pagar_con_tarjeta' tarjeta.id %}">Pagar con esta</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4">No hay tarjetas guardadas.</td></tr>
+        {% endfor %}
+    </table>
+
+    <p><a href="{% url 'iniciar_transaccion' %}">Probar con tarjeta nueva</a></p>
+    <td>
+        <a href="{% url 'pagar_con_tarjeta' tarjeta.id %}">Pagar</a> |
+        <a href="{% url 'editar_tarjeta' tarjeta.id %}">Editar</a> |
+        <a href="{% url 'eliminar_tarjeta' tarjeta.id %}">Eliminar</a>
+    </td>
+    <p><a href="{% url 'crear_tarjeta' %}">➕ Crear nueva tarjeta</a></p>
+    <p><a href="{% url 'inicio' %}">Volver al inicio</a></p>
+    <p><a href="{% url 'logout' %}">Cerrar sesión</a></p>    
+</body>
+</html>

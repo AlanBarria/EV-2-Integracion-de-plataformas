@@ -1,9 +1,11 @@
 from django.shortcuts import render, redirect
-from .forms import RegistroUsuarioForm
+from .forms import RegistroUsuarioForm,TarjetaForm
 from django.http import HttpResponse
-from .models import Herramienta
+from .models import Herramienta,Tarjeta
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
+from transbank.transaccion_completa.transaction import Transaction
+from .transbank_config import *
 
 def inicio(request):
     herramientas = Herramienta.objects.all()
@@ -79,3 +81,88 @@ def crud_herramientas(request):
         'herramientas': herramientas,
         'form': form
     })
+
+def iniciar_transaccion(request):
+    # Simula el ingreso manual de datos
+    buy_order = "orden12345"
+    session_id = "session123"
+    amount = 10000
+    card_number = "4051885600446623"
+    cvv = "123"
+    card_expiration_date = "23/12"
+
+    # Guardar la tarjeta (modo pruebas)
+    Tarjeta.objects.create(
+        numero=card_number,
+        fecha_expiracion=card_expiration_date,
+        cvv=cvv
+    )
+
+    response = Transaction.create(
+        buy_order, session_id, amount,
+        card_number, cvv, card_expiration_date
+    )
+
+    if response['status'] == 'AUTHORIZED':
+        return render(request, 'transaccion_exitosa.html', {'response': response})
+    else:
+        return render(request, 'transaccion_fallida.html', {'response': response})
+
+
+def listar_tarjetas(request):
+    tarjetas = Tarjeta.objects.all()
+    editar_id = request.GET.get('editar')
+    eliminar_id = request.GET.get('eliminar')
+    form = TarjetaForm()
+
+    if editar_id:
+        tarjeta_obj = get_object_or_404(Tarjeta, id=editar_id)
+        form = TarjetaForm(instance=tarjeta_obj)
+
+    if request.method == 'POST':
+        if eliminar_id:
+            tarjeta_obj = get_object_or_404(Tarjeta, id=eliminar_id)
+            tarjeta_obj.delete()
+            return redirect('listar_tarjetas')
+
+        if editar_id:
+            tarjeta_obj = get_object_or_404(Tarjeta, id=editar_id)
+            form = TarjetaForm(request.POST, instance=tarjeta_obj)
+        else:
+            form = TarjetaForm(request.POST)
+
+        if form.is_valid():
+            form.save()
+            return redirect('listar_tarjetas')
+
+    eliminar = None
+    if eliminar_id:
+        eliminar = get_object_or_404(Tarjeta, id=eliminar_id)
+
+    return render(request, 'tarjetas.html', {
+        'tarjetas': tarjetas,
+        'form': form,
+        'eliminar': eliminar
+    })
+
+def pagar_con_tarjeta(request, tarjeta_id):
+    tarjeta = get_object_or_404(Tarjeta, id=tarjeta_id)
+    buy_order = f"orden-{tarjeta.id}"
+    session_id = f"session-{tarjeta.id}"
+    amount = 10000
+
+    response = Transaction.create(
+        buy_order,
+        session_id,
+        amount,
+        tarjeta.numero,
+        tarjeta.cvv,
+        tarjeta.fecha_expiracion
+    )
+
+    if response['status'] == 'AUTHORIZED':
+        return render(request, 'transaccion_exitosa.html', {'response': response})
+    else:
+        return render(request, 'transaccion_fallida.html', {'response': response})
+
+

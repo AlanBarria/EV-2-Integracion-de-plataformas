@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
-from .models import Herramienta
+from .models import Herramienta, Tarjeta
 
 class RegistroUsuarioForm(UserCreationForm):
     email = forms.EmailField(required=True)
@@ -14,3 +14,8 @@ class HerramientaForm(forms.ModelForm):
     class Meta:
         model = Herramienta
         fields = ['nombre', 'descripcion', 'precio', 'stock', 'imagen']
+
+class TarjetaForm(forms.ModelForm):
+    class Meta:
+        model = Tarjeta
+        fields = ['numero', 'fecha_expiracion', 'cvv']
