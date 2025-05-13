@@ -1,9 +1,11 @@
 from django.shortcuts import render, redirect
-from .forms import RegistroUsuarioForm
-from django.http import HttpResponse
-from .models import Herramienta
+from .forms import RegistroUsuarioForm, OrdenForm
+from django.http import HttpResponse, JsonResponse
+from .models import Herramienta, Orden
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
+from ferremas.webpay import confirmar_transaccion, crear_transaccion
+import os
 
 def inicio(request):
     herramientas = Herramienta.objects.all()
@@ -47,6 +49,7 @@ def iniciar_sesion(request):
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Herramienta
 from .forms import HerramientaForm
+from django.conf import settings
 
 def crud_herramientas(request):
     herramientas = Herramienta.objects.all()
@@ -79,3 +82,31 @@ def crud_herramientas(request):
         'herramientas': herramientas,
         'form': form
     })
+
+import uuid
+def iniciar_pago(request):
+    if request.method == 'POST':
+        orden_id = 'orden123'
+        sesion_id = 'session123'
+        monto = 1000
+
+        respuesta = crear_transaccion(orden_id, sesion_id, monto)
+
+        if respuesta and 'token' in respuesta and 'url' in respuesta:
+            return redirect(f"{respuesta['url']}?token_ws={respuesta['token']}")
+        else:
+            return render(request, 'ferremas/error.html', {'error': 'No se pudo iniciar la transacción'})
+    return render(request, 'pago.html')
+
+
+def confirmar_pago(request):
+    token = request.GET.get('token_ws')
+    if not token:
+        return render(request, 'ferremas/error.html', {'error': 'Token no recibido'})
+
+    resultado = confirmar_transaccion(token)
+
+    if resultado and resultado.get('status') == 'AUTHORIZED':
+        return render(request, 'ferremas/pago_exitoso.html', {'resultado': resultado})
+    else:
+        return render(request, 'ferremas/error.html', {'error': 'Pago no autorizado o fallido', 'detalle': resultado})

@@ -17,5 +17,11 @@
             </li>
         {% endfor %}
     </ul>
+
+    <!-- Formulario para iniciar pago -->
+    <form action="{% url 'iniciar_pago' %}" method="post">
+        {% csrf_token %}
+        <button type="submit">Iniciar Pago</button>
+    </form>
 </body>
 </html>

@@ -55,8 +55,8 @@ ROOT_URLCONF = 'Integracion_de_plataformas.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
+        'DIRS': [],  # Puedes dejarlo vacío o agregar otras rutas si tienes plantillas globales
+        'APP_DIRS': True,  # Esto permite a Django buscar plantillas dentro de las aplicaciones
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',

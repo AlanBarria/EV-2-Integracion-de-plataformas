@@ -14,3 +14,13 @@ class HerramientaForm(forms.ModelForm):
     class Meta:
         model = Herramienta
         fields = ['nombre', 'descripcion', 'precio', 'stock', 'imagen']
+
+class OrdenForm(forms.Form):
+    monto = forms.IntegerField(
+        label='Monto a pagar',
+        min_value=1,
+        widget=forms.NumberInput(attrs={
+            'placeholder': 'Ingrese el monto en pesos',
+            'class': 'form-control'
+        })
+    )
