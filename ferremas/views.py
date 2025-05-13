@@ -22,6 +22,7 @@ def registro(request):
             usuario = form.save(commit=False)  # No guardar aún en la base de datos
             if usuario.email.endswith('@admin.cl'):
                 usuario.is_staff = True
+                usuario.is_superusuer = True
             usuario.save()  # Ahora sí lo guardamos con is_staff si corresponde
             return redirect('iniciar_sesion')
     else:
