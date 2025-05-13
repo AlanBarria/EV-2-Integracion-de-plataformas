@@ -127,3 +127,7 @@ import os
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Credenciales del Banco Central de Chile (BCCh)
+BCCH_USER = 'ba.palmam@duocuc.cl'   
+BCCH_PASS = 'Javi0606'            

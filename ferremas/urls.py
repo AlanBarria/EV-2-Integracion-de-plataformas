@@ -8,4 +8,7 @@ urlpatterns = [
     path('registro/', views.registro, name='registro'),  # Asumiendo que ya tienes login
     path('webpay/iniciar/', views.iniciar_pago, name='iniciar_pago'),
     path('webpay/confirmar/', views.confirmar_pago, name='confirmar_pago'),
+    path('serie/', views.get_series_data, name='get_series_data'),
+    path('catalogo/', views.search_series, name='search_series'),
+    path('convert/', views.convert_currency, name='convert_currency'),
 ]
