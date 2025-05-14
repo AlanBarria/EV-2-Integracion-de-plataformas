@@ -7,6 +7,7 @@ from django.contrib.auth import authenticate, login
 from ferremas.webpay import confirmar_transaccion, crear_transaccion
 import os
 import requests
+from .serializers import HerramientaSerializer, OrdenSerializer
 
 def inicio(request):
     herramientas = Herramienta.objects.all()
@@ -209,3 +210,14 @@ def update_cart_total(request):
     }
 
     return JsonResponse(response_data)
+
+from rest_framework import viewsets
+
+#API creada
+class HerramientaViewSet(viewsets.ModelViewSet):
+    queryset = Herramienta.objects.all()
+    serializer_class = HerramientaSerializer
+
+class OrdenViewSet(viewsets.ModelViewSet):
+    queryset = Orden.objects.all()
+    serializer_class = OrdenSerializer

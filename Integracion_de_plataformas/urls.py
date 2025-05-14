@@ -11,6 +11,7 @@ urlpatterns = [
     path('api/', include('ferremas.urls')),
     path('webpay/confirmar/', confirmar_pago, name='webpay_confirmar'),
     path('', RedirectView.as_view(url='/api/', permanent=False)),
+     path('api/', include('ferremas.urls_api')),  
 ]
 
 if settings.DEBUG:
