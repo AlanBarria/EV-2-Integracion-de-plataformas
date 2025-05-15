@@ -57,33 +57,67 @@ from django.conf import settings
 def crud_herramientas(request):
     herramientas = Herramienta.objects.all()
     form = HerramientaForm()
-
-    # Crear o editar
-    if request.method == 'POST':
-        if 'editar_id' in request.POST:
-            herramienta = get_object_or_404(Herramienta, id=request.POST['editar_id'])
-            form = HerramientaForm(request.POST, request.FILES, instance=herramienta)
-        else:
-            form = HerramientaForm(request.POST, request.FILES)
-
-        if form.is_valid():
-            form.save()
-            return redirect('crud_herramientas')
-
-    # Eliminar
-    elif request.method == 'GET' and 'eliminar_id' in request.GET:
-        herramienta = get_object_or_404(Herramienta, id=request.GET['eliminar_id'])
-        herramienta.delete()
-        return redirect('crud_herramientas')
+    editar_id = request.GET.get('editar_id')
+    herramienta_editada = None
 
     # Cargar datos para edición
-    elif request.method == 'GET' and 'editar_id' in request.GET:
-        herramienta = get_object_or_404(Herramienta, id=request.GET['editar_id'])
-        form = HerramientaForm(instance=herramienta)
+    if editar_id:
+        herramienta_editada = get_object_or_404(Herramienta, id=editar_id)
+        form = HerramientaForm(instance=herramienta_editada)
+
+    # Guardar cambios
+    if request.method == 'POST':
+        editar_id = request.POST.get('editar_id')
+        form = HerramientaForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            data = {
+                'nombre': form.cleaned_data['nombre'],
+                'descripcion': form.cleaned_data['descripcion'],
+                'precio': str(form.cleaned_data['precio']),
+                'stock': str(form.cleaned_data['stock']),
+            }
+            files = {}
+            if 'imagen' in request.FILES:
+                files['imagen'] = request.FILES['imagen']
+
+            if editar_id:
+                # Editar herramienta existente con PATCH
+                response = requests.patch(
+                    f'http://127.0.0.1:8000/api/herramientas/{editar_id}/',
+                    data=data,
+                    files=files if files else None
+                )
+                if response.status_code in [200, 202]:
+                    messages.success(request, 'Herramienta editada exitosamente.')
+                    return redirect('crud_herramientas')
+                else:
+                    messages.error(request, 'Error al editar herramienta.')
+            else:
+                # Crear herramienta nueva con POST
+                response = requests.post(
+                    'http://127.0.0.1:8000/api/herramientas/',
+                    data=data,
+                    files=files if files else None
+                )
+                if response.status_code == 201:
+                    messages.success(request, 'Herramienta creada exitosamente.')
+                    return redirect('crud_herramientas')
+                else:
+                    messages.error(request, 'Error al crear herramienta.')
+
+    # Eliminar
+    if request.method == 'GET' and 'eliminar_id' in request.GET:
+        herramienta = get_object_or_404(Herramienta, id=request.GET['eliminar_id'])
+        herramienta.delete()
+        messages.success(request, 'Herramienta eliminada correctamente.')
+        return redirect('crud_herramientas')
 
     return render(request, 'ferremas/admin/crud_herramientas.html', {
         'herramientas': herramientas,
-        'form': form
+        'form': form,
+        'editar_id': editar_id,
+        'herramienta_editada': herramienta_editada,
     })
 
 import uuid
@@ -217,7 +251,6 @@ from rest_framework import viewsets
 class HerramientaViewSet(viewsets.ModelViewSet):
     queryset = Herramienta.objects.all()
     serializer_class = HerramientaSerializer
-
 class OrdenViewSet(viewsets.ModelViewSet):
     queryset = Orden.objects.all()
     serializer_class = OrdenSerializer

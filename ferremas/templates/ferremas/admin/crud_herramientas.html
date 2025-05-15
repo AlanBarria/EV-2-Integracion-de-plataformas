@@ -1,5 +1,25 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CRUD Herramientas</title>
+</head>
+<body>
+
 <h1>Administración de Herramientas</h1>
 
+<!-- Mostrar mensajes -->
+{% if messages %}
+    <ul>
+        {% for message in messages %}
+            <li style="color: {% if message.tags == 'success' %}green{% else %}red{% endif %};">
+                {{ message }}
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+<!-- Formulario -->
 <h2>{% if form.instance.pk %}Editar{% else %}Crear{% endif %} Herramienta</h2>
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
@@ -10,19 +30,27 @@
     <button type="submit">Guardar</button>
 </form>
 
-<hr>
+<!-- Vista previa de imagen actual -->
+{% if herramienta_editada and herramienta_editada.imagen %}
+    <p>Imagen actual:</p>
+    <img src="{{ herramienta_editada.imagen.url }}" width="150">
+{% endif %}
 
-<h2>Lista de Herramientas</h2>
+<!-- Lista de herramientas -->
+<h2>Herramientas registradas</h2>
 <ul>
     {% for herramienta in herramientas %}
         <li>
-            <strong>{{ herramienta.nombre }}</strong> - ${{ herramienta.precio }} - Stock: {{ herramienta.stock }}
+            {{ herramienta.nombre }} - ${{ herramienta.precio }} (Stock: {{ herramienta.stock }})
             {% if herramienta.imagen %}
-                <br><img src="{{ herramienta.imagen.url }}" alt="Imagen" width="100">
+                <br><img src="{{ herramienta.imagen.url }}" width="100">
             {% endif %}
             <br>
             <a href="?editar_id={{ herramienta.id }}">Editar</a> |
-            <a href="?eliminar_id={{ herramienta.id }}" onclick="return confirm('¿Eliminar esta herramienta?')">Eliminar</a>
+            <a href="?eliminar_id={{ herramienta.id }}" onclick="return confirm('¿Eliminar herramienta?');">Eliminar</a>
         </li>
     {% endfor %}
 </ul>
+
+</body>
+</html>
