@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-
 class Herramienta(models.Model):
     CATEGORIAS = [
         ('electricas', 'Eléctricas'),
@@ -52,4 +51,23 @@ class DetalleOrden(models.Model):
         return f"{self.cantidad} x {self.herramienta.nombre} en Orden {self.orden.orden_id}"
 
 
+class Carrito(models.Model):
+    usuario = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
 
+    def total(self):
+        return sum(item.subtotal() for item in self.items.all())
+
+    def __str__(self):
+        return f"Carrito de {self.usuario.username if self.usuario else 'Usuario anónimo'}"
+
+class ItemCarrito(models.Model):
+    carrito = models.ForeignKey(Carrito, related_name='items', on_delete=models.CASCADE)
+    herramienta = models.ForeignKey(Herramienta, on_delete=models.CASCADE)
+    cantidad = models.PositiveIntegerField(default=1)
+
+    def subtotal(self):
+        return self.herramienta.precio * self.cantidad
+
+    def __str__(self):
+        return f"{self.cantidad} x {self.herramienta.nombre}"
