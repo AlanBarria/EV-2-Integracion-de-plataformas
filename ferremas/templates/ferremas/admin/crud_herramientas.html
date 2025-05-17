@@ -1,56 +1,131 @@
 {% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+    <meta charset="UTF-8">
     <title>CRUD Herramientas</title>
+    <link rel="stylesheet" href="{% static 'css/herramientas.css' %}">
 </head>
 <body>
 
-<h1>Administración de Herramientas</h1>
+<!-- Navbar -->
+<nav class="navbar">
+    <div class="navbar-container">
+        <a href="/" class="navbar-logo">Ferremas</a>
+        <a href="{% url 'logout' %}">Cerrar sesión</a>
+        <ul class="navbar-menu"></ul>
+    </div>
+</nav>
 
-<!-- Mostrar mensajes -->
-{% if messages %}
-    <ul>
-        {% for message in messages %}
-            <li style="color: {% if message.tags == 'success' %}green{% else %}red{% endif %};">
-                {{ message }}
-            </li>
-        {% endfor %}
-    </ul>
-{% endif %}
+<div class="contenedor-principal">
+    <!-- Sección de Formulario -->
+    <div class="formulario-seccion">
+        <h2 class="titulo-formulario">{% if form.instance.pk %}Editar{% else %}Crear{% endif %} Herramienta</h2>
 
-<!-- Formulario -->
-<h2>{% if form.instance.pk %}Editar{% else %}Crear{% endif %} Herramienta</h2>
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    {% if form.instance.pk %}
-        <input type="hidden" name="editar_id" value="{{ form.instance.pk }}">
-    {% endif %}
-    <button type="submit">Guardar</button>
-</form>
+        {% if messages %}
+            <ul class="mensajes">
+                {% for message in messages %}
+                    <li class="{{ message.tags }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
 
-<!-- Vista previa de imagen actual -->
-{% if herramienta_editada and herramienta_editada.imagen %}
-    <p>Imagen actual:</p>
-    <img src="{{ herramienta_editada.imagen.url }}" width="150">
-{% endif %}
+        <form method="post" enctype="multipart/form-data" class="formulario">
+            {% csrf_token %}
 
-<!-- Lista de herramientas -->
-<h2>Herramientas registradas</h2>
-<ul>
-    {% for herramienta in herramientas %}
-        <li>
-            {{ herramienta.nombre }} - ${{ herramienta.precio }} (Stock: {{ herramienta.stock }})
-            {% if herramienta.imagen %}
-                <br><img src="{{ herramienta.imagen.url }}" width="100">
+            <div class="grupo-campos">
+                <label for="id_codigo_interno">Código interno</label>
+                {{ form.codigo_interno }}
+            </div>
+
+            <div class="grupo-campos">
+                <label for="id_codigo_fabricante">Código fabricante</label>
+                {{ form.codigo_fabricante }}
+            </div>
+
+            <div class="grupo-campos">
+                <label for="id_marca">Marca</label>
+                {{ form.marca }}
+            </div>
+
+            <div class="grupo-campos">
+                <label for="id_nombre">Nombre</label>
+                {{ form.nombre }}
+            </div>
+
+            <div class="grupo-campos">
+                <label for="id_descripcion">Descripción</label>
+                {{ form.descripcion }}
+            </div>
+
+            <div class="grupo-campos">
+                <label for="id_categoria">Categoría</label>
+                {{ form.categoria }}
+            </div>
+
+            <div class="grupo-campos">
+                <label for="id_precio">Precio</label>
+                {{ form.precio }}
+            </div>
+
+            <div class="grupo-campos">
+                <label for="id_stock">Stock</label>
+                {{ form.stock }}
+            </div>
+
+            <div class="grupo-campos">
+                <label for="id_imagen">Imagen</label>
+                {{ form.imagen }}
+            </div>
+
+            {% if form.instance.pk %}
+                <input type="hidden" name="editar_id" value="{{ form.instance.pk }}">
             {% endif %}
-            <br>
-            <a href="?editar_id={{ herramienta.id }}">Editar</a> |
-            <a href="?eliminar_id={{ herramienta.id }}" onclick="return confirm('¿Eliminar herramienta?');">Eliminar</a>
-        </li>
-    {% endfor %}
-</ul>
+
+            <button type="submit" class="btn-guardar">Guardar herramienta</button>
+        </form>
+
+        {% if herramienta_editada and herramienta_editada.imagen %}
+            <div class="herramienta-imagen">
+                <p>Imagen actual:</p>
+                <img src="{{ herramienta_editada.imagen.url }}" alt="Imagen actual">
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Sección Lista de Herramientas -->
+    <div class="lista-seccion">
+        <h2>Herramientas registradas</h2>
+        {% if herramientas %}
+            <ul class="lista-herramientas">
+                {% for herramienta in herramientas %}
+                    <li class="herramienta-item">
+                        <div class="herramienta-info">
+                            <strong>{{ herramienta.nombre }}</strong><br>
+                            <span>Categoría: {{ herramienta.get_categoria_display }}</span><br>
+                            <span>Código interno: {{ herramienta.codigo_interno }}</span><br>
+                            <span>Fabricante: {{ herramienta.codigo_fabricante }}</span><br>
+                            <span>Marca: {{ herramienta.marca }}</span><br>
+                            <span>Precio: ${{ herramienta.precio }}</span><br>
+                            <span>Stock: {{ herramienta.stock }}</span>
+                        </div>
+                        <div class="herramienta-imagen">
+                            {% if herramienta.imagen %}
+                                <img src="{{ herramienta.imagen.url }}" alt="{{ herramienta.nombre }}">
+                            {% endif %}
+                        </div>
+                        <div class="acciones">
+                            <a href="?editar_id={{ herramienta.id }}" class="btn-editar">Editar</a>
+                            <a href="?eliminar_id={{ herramienta.id }}" class="btn-eliminar" onclick="return confirm('¿Eliminar herramienta?');">Eliminar</a>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No hay herramientas registradas.</p>
+        {% endif %}
+    </div>
+</div>
 
 </body>
 </html>

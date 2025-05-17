@@ -1,4 +1,5 @@
 from django.urls import path
+from django.contrib.auth.views import LogoutView
 from . import views
 
 urlpatterns = [
@@ -10,5 +11,7 @@ urlpatterns = [
     path('webpay/confirmar/', views.confirmar_pago, name='confirmar_pago'),
     path('serie/', views.get_series_data, name='get_series_data'),
     path('catalogo/', views.search_series, name='search_series'),
-    path('convert/', views.convert_currency, name='convert_currency'),
+    path('api/convert/', views.convert_currency, name='convert_currency'),
+    path('api/logout/', views.logout_view, name='logout'),  
+    path('catalogo/', views.catalogo_filtrado, name='catalogo_filtrado'),
 ]

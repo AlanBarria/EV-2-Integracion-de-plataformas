@@ -13,7 +13,17 @@ class RegistroUsuarioForm(UserCreationForm):
 class HerramientaForm(forms.ModelForm):
     class Meta:
         model = Herramienta
-        fields = ['nombre', 'descripcion', 'precio', 'stock', 'imagen']
+        fields = [
+            'codigo_interno',
+            'codigo_fabricante',
+            'marca',
+            'nombre',
+            'descripcion',
+            'categoria',  # <-- Campo agregado
+            'precio',
+            'stock',
+            'imagen',
+        ]
 
 class OrdenForm(forms.Form):
     monto = forms.IntegerField(

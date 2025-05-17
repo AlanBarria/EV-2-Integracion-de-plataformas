@@ -3,12 +3,14 @@ from .forms import RegistroUsuarioForm, OrdenForm
 from django.http import HttpResponse, JsonResponse
 from .models import Herramienta, Orden
 from django.contrib import messages
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from ferremas.webpay import confirmar_transaccion, crear_transaccion
 import os
 import requests
 from .serializers import HerramientaSerializer, OrdenSerializer
+from django.contrib.auth.decorators import login_required
 
+@login_required
 def inicio(request):
     herramientas = Herramienta.objects.all()
     return render(request, 'ferremas/inicio.html', {'herramientas': herramientas})
@@ -23,7 +25,7 @@ def registro(request):
             usuario = form.save(commit=False)  # No guardar aún en la base de datos
             if usuario.email.endswith('@admin.cl'):
                 usuario.is_staff = True
-                usuario.is_superusuer = True
+                usuario.is_superuser = True
             usuario.save()  # Ahora sí lo guardamos con is_staff si corresponde
             return redirect('iniciar_sesion')
     else:
@@ -47,13 +49,21 @@ def iniciar_sesion(request):
             messages.error(request, 'Nombre de usuario o contraseña incorrectos.')
     return render(request, 'ferremas/login.html')
 
+from django.contrib.auth import logout
+from django.shortcuts import redirect
 
+
+def logout_view(request):
+    logout(request)
+    return redirect('iniciar_sesion') 
 
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Herramienta
 from .forms import HerramientaForm
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 
+@login_required
 def crud_herramientas(request):
     herramientas = Herramienta.objects.all()
     form = HerramientaForm()
@@ -68,26 +78,41 @@ def crud_herramientas(request):
     # Guardar cambios
     if request.method == 'POST':
         editar_id = request.POST.get('editar_id')
-        form = HerramientaForm(request.POST, request.FILES)
+        herramienta_editada = None
+        if editar_id:
+            herramienta_editada = get_object_or_404(Herramienta, id=editar_id)
+            form = HerramientaForm(request.POST, request.FILES, instance=herramienta_editada)
+        else:
+            form = HerramientaForm(request.POST, request.FILES)
 
         if form.is_valid():
             data = {
+                'codigo_interno': form.cleaned_data['codigo_interno'],
+                'codigo_fabricante': form.cleaned_data['codigo_fabricante'],
+                'marca': form.cleaned_data['marca'],
                 'nombre': form.cleaned_data['nombre'],
                 'descripcion': form.cleaned_data['descripcion'],
                 'precio': str(form.cleaned_data['precio']),
                 'stock': str(form.cleaned_data['stock']),
             }
+
             files = {}
             if 'imagen' in request.FILES:
                 files['imagen'] = request.FILES['imagen']
 
             if editar_id:
                 # Editar herramienta existente con PATCH
-                response = requests.patch(
-                    f'http://127.0.0.1:8000/api/herramientas/{editar_id}/',
-                    data=data,
-                    files=files if files else None
-                )
+                if files:
+                    response = requests.patch(
+                        f'http://127.0.0.1:8000/api/herramientas/{editar_id}/',
+                        data=data,
+                        files=files
+                    )
+                else:
+                    response = requests.patch(
+                        f'http://127.0.0.1:8000/api/herramientas/{editar_id}/',
+                        data=data
+                    )
                 if response.status_code in [200, 202]:
                     messages.success(request, 'Herramienta editada exitosamente.')
                     return redirect('crud_herramientas')
@@ -95,11 +120,17 @@ def crud_herramientas(request):
                     messages.error(request, 'Error al editar herramienta.')
             else:
                 # Crear herramienta nueva con POST
-                response = requests.post(
-                    'http://127.0.0.1:8000/api/herramientas/',
-                    data=data,
-                    files=files if files else None
-                )
+                if files:
+                    response = requests.post(
+                        'http://127.0.0.1:8000/api/herramientas/',
+                        data=data,
+                        files=files
+                    )
+                else:
+                    response = requests.post(
+                        'http://127.0.0.1:8000/api/herramientas/',
+                        data=data
+                    )
                 if response.status_code == 201:
                     messages.success(request, 'Herramienta creada exitosamente.')
                     return redirect('crud_herramientas')
@@ -185,25 +216,26 @@ def search_series(request):
     return JsonResponse(response.json() if response.ok else {'error': 'Error al consultar el catálogo'}, status=response.status_code)
 
 def convert_currency(request):
-    amount = float(request.GET.get('amount', 0))  # Monto a convertir
-    from_currency = request.GET.get('from_currency', 'USD')  # Moneda de origen
-    to_currency = request.GET.get('to_currency', 'CLP')  # Moneda de destino
+    try:
+        amount_str = request.GET.get('amount', '0').replace(',', '.')
+        from_currency = request.GET.get('from_currency', 'USD')
+        to_currency = request.GET.get('to_currency', 'CLP')
+
+        amount = float(amount_str)
+
+        exchange_rate = 850.0  # Tasa ficticia
+        converted_amount = amount * exchange_rate
+
+        return JsonResponse({
+            'original_amount': amount,
+            'from_currency': from_currency,
+            'to_currency': to_currency,
+            'converted_amount': converted_amount,
+            'exchange_rate': exchange_rate,
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
     
-    # Aquí deberías obtener las tasas de cambio de una API o base de datos
-    exchange_rate = 850.0  # Este es un valor ficticio para ejemplo
-
-    converted_amount = amount * exchange_rate
-    response_data = {
-        'original_amount': amount,
-        'from_currency': from_currency,
-        'to_currency': to_currency,
-        'converted_amount': converted_amount,
-        'exchange_rate': exchange_rate,
-    }
-
-    return JsonResponse(response_data)
-
-
 def get_exchange_rate():
     # Aquí haces la solicitud a la API del Banco Central para obtener la tasa de cambio
     # Supongamos que la tasa de cambio de USD a CLP es lo que necesitas.
@@ -254,3 +286,16 @@ class HerramientaViewSet(viewsets.ModelViewSet):
 class OrdenViewSet(viewsets.ModelViewSet):
     queryset = Orden.objects.all()
     serializer_class = OrdenSerializer
+
+#Categorías
+
+def catalogo_filtrado(request):
+    categoria = request.GET.get('categoria', '')
+    if categoria:
+        herramientas = Herramienta.objects.filter(categoria=categoria)
+    else:
+        herramientas = Herramienta.objects.all()
+    return render(request, 'ferremas/catalogo_filtrado.html', {
+        'herramientas': herramientas,
+        'categoria_actual': categoria,
+    })
