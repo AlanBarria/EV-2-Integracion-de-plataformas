@@ -55,17 +55,19 @@
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         {% for herramienta in herramientas %}
             <div class="col">
-                <div class="card h-100 herramienta-card border border-secondary" data-precio="{{ herramienta.precio|floatformat:2 }}">
-                    {% if herramienta.imagen %}
-                        <img src="{{ herramienta.imagen.url }}" class="card-img-top" alt="{{ herramienta.nombre }}">
-                    {% endif %}
-                    <div class="card-body">
-                        <h5 class="card-title text-primary fw-bold">{{ herramienta.nombre }}</h5>
-                        <p class="card-text small">{{ herramienta.descripcion }}</p>
-                        <p class="card-text"><span class="badge bg-secondary">{{ herramienta.get_categoria_display }}</span></p>
-                        <p class="card-text fw-bold text-success">$ {{ herramienta.precio }}</p>
+                <a href="{% url 'detalle_herramienta' herramienta.id %}" class="text-decoration-none text-dark">
+                    <div class="card h-100 herramienta-card border border-secondary" data-precio="{{ herramienta.precio|floatformat:2 }}">
+                        {% if herramienta.imagen %}
+                            <img src="{{ herramienta.imagen.url }}" class="card-img-top" alt="{{ herramienta.nombre }}">
+                        {% endif %}
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title text-primary fw-bold">{{ herramienta.nombre }}</h5>
+                            <p class="card-text small">{{ herramienta.descripcion }}</p>
+                            <p class="card-text"><span class="badge bg-secondary">{{ herramienta.get_categoria_display }}</span></p>
+                            <p class="card-text fw-bold text-success">$ {{ herramienta.precio }}</p>
+                        </div>
                     </div>
-                </div>
+                </a>
             </div>
         {% empty %}
             <div class="text-center">
@@ -73,15 +75,7 @@
             </div>
         {% endfor %}
     </div>
-
-    <div class="text-center mt-5">
-        <form action="{% url 'iniciar_pago' %}" method="post">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-warning btn-lg text-dark fw-bold">Iniciar Pago</button>
-        </form>
-    </div>
 </div>
-   
 
 <!-- Conversor -->
 <hr class="my-5" id="conversor">
@@ -147,35 +141,6 @@
                 console.error('Error:', error);
                 document.getElementById('result').textContent = 'Error al convertir moneda.';
             });
-    });
-
-    document.querySelectorAll('.herramienta-card').forEach(card => {
-        card.addEventListener('click', function () {
-            let precio = this.getAttribute('data-precio').replace(',', '.');
-            const amountInput = document.getElementById('amountInput');
-            amountInput.value = precio;
-
-            const params = new URLSearchParams({
-                amount: precio,
-                from_currency: 'USD',
-                to_currency: 'CLP'
-            });
-
-            fetch(`/api/convert/?${params.toString()}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        document.getElementById('result').textContent = 'Error: ' + data.error;
-                    } else {
-                        document.getElementById('result').textContent =
-                            `${data.original_amount} ${data.from_currency} = ${data.converted_amount.toFixed(2)} ${data.to_currency} (Tasa: ${data.exchange_rate})`;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('result').textContent = 'Error al convertir moneda.';
-                });
-        });
     });
 </script>
 

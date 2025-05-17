@@ -13,5 +13,10 @@ urlpatterns = [
     path('catalogo/', views.search_series, name='search_series'),
     path('api/convert/', views.convert_currency, name='convert_currency'),
     path('api/logout/', views.logout_view, name='logout'),  
-    path('catalogo/', views.catalogo_filtrado, name='catalogo_filtrado'),
+    path('catalogo/', views.catalogo, name='catalogo'),
+    path('herramienta/<int:herramienta_id>/', views.detalle_herramienta, name='detalle_herramienta'),
+    path('pago_exitoso/', views.pago_exitoso, name='pago_exitoso'),
+    path('resumen_compra/<int:producto_id>/', views.resumen_compra, name='resumen_compra'),
+   
+
 ]

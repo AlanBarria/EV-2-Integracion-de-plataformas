@@ -12,7 +12,12 @@ from django.contrib.auth.decorators import login_required
 
 @login_required
 def inicio(request):
-    herramientas = Herramienta.objects.all()
+    categoria = request.GET.get('categoria')
+    if categoria:
+        herramientas = Herramienta.objects.filter(categoria=categoria)
+    else:
+        herramientas = Herramienta.objects.all()
+
     return render(request, 'ferremas/inicio.html', {'herramientas': herramientas})
 
 def admin_vista(request):
@@ -87,14 +92,15 @@ def crud_herramientas(request):
 
         if form.is_valid():
             data = {
-                'codigo_interno': form.cleaned_data['codigo_interno'],
-                'codigo_fabricante': form.cleaned_data['codigo_fabricante'],
-                'marca': form.cleaned_data['marca'],
-                'nombre': form.cleaned_data['nombre'],
-                'descripcion': form.cleaned_data['descripcion'],
-                'precio': str(form.cleaned_data['precio']),
-                'stock': str(form.cleaned_data['stock']),
-            }
+            'codigo_interno': form.cleaned_data['codigo_interno'],
+            'codigo_fabricante': form.cleaned_data['codigo_fabricante'],
+            'marca': form.cleaned_data['marca'],
+            'nombre': form.cleaned_data['nombre'],
+            'descripcion': form.cleaned_data['descripcion'],
+            'categoria': form.cleaned_data['categoria'],  # <-- esta línea es clave
+            'precio': str(form.cleaned_data['precio']),
+            'stock': str(form.cleaned_data['stock']),
+        }
 
             files = {}
             if 'imagen' in request.FILES:
@@ -152,11 +158,19 @@ def crud_herramientas(request):
     })
 
 import uuid
+from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
+
+@csrf_exempt
 def iniciar_pago(request):
     if request.method == 'POST':
+        producto_id = request.POST.get('producto_id')
+        request.session['producto_id'] = producto_id  # Guardar en sesión
+
         orden_id = 'orden123'
         sesion_id = 'session123'
-        monto = 1000
+        herramienta = Herramienta.objects.get(id=producto_id)
+        monto = int(herramienta.precio)
 
         respuesta = crear_transaccion(orden_id, sesion_id, monto)
 
@@ -164,6 +178,7 @@ def iniciar_pago(request):
             return redirect(f"{respuesta['url']}?token_ws={respuesta['token']}")
         else:
             return render(request, 'ferremas/error.html', {'error': 'No se pudo iniciar la transacción'})
+
     return render(request, 'pago.html')
 
 
@@ -175,9 +190,12 @@ def confirmar_pago(request):
     resultado = confirmar_transaccion(token)
 
     if resultado and resultado.get('status') == 'AUTHORIZED':
-        return render(request, 'ferremas/pago_exitoso.html', {'resultado': resultado})
+        producto_id = request.session.get('producto_id')
+        if producto_id:
+            return redirect('resumen_compra', producto_id=producto_id)
+        return render(request, 'ferremas/resumen_compra.html', {'resultado': resultado})
     else:
-        return render(request, 'ferremas/error.html', {'error': 'Pago no autorizado o fallido', 'detalle': resultado})
+        return render(request, 'ferremas/error.html', {'error': 'Pago no autorizado'})
 
 #API Banco Central De Chile
 # Obtener datos de una serie
@@ -289,13 +307,40 @@ class OrdenViewSet(viewsets.ModelViewSet):
 
 #Categorías
 
-def catalogo_filtrado(request):
-    categoria = request.GET.get('categoria', '')
+def catalogo(request):
+    categoria = request.GET.get('categoria')
     if categoria:
         herramientas = Herramienta.objects.filter(categoria=categoria)
     else:
         herramientas = Herramienta.objects.all()
-    return render(request, 'ferremas/catalogo_filtrado.html', {
-        'herramientas': herramientas,
-        'categoria_actual': categoria,
-    })
+
+    return render(request, 'ferremas/catalogo.html', {'herramientas': herramientas})
+
+
+
+def detalle_herramienta(request, herramienta_id):
+    herramienta = get_object_or_404(Herramienta, id=herramienta_id)
+    return render(request, 'ferremas/detalle_herramienta.html', {'herramienta': herramienta})
+
+def resumen_compra(request, producto_id):
+    herramienta = get_object_or_404(Herramienta, id=producto_id)
+    return render(request, 'ferremas/resumen_compra.html', {'herramienta': herramienta})
+
+def pago_exitoso(request):
+    token = request.GET.get('token_ws')
+
+    if not token:
+        return render(request, 'ferremas/error.html', {'error': 'Token no recibido desde Webpay'})
+
+    # Confirmar con Webpay
+    resultado = confirmar_transaccion(token)
+
+    if resultado and resultado.get("status") == "AUTHORIZED":
+        producto_id = request.session.get('producto_id')
+
+        if producto_id:
+            return redirect('resumen_compra', producto_id=producto_id)
+        else:
+            return render(request, 'ferremas/error.html', {'error': 'Producto no encontrado en sesión'})
+    else:
+        return render(request, 'ferremas/error.html', {'error': 'Pago no autorizado'})

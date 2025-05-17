@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 
 class Herramienta(models.Model):
@@ -23,6 +24,7 @@ class Herramienta(models.Model):
 
 
 class Orden(models.Model):
+    cliente = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Cliente", null=True, blank=True)
     orden_id = models.CharField("ID de la Orden", max_length=100, unique=True)
     sesion_id = models.CharField("ID de Sesión", max_length=100)
     monto = models.PositiveIntegerField("Monto Total")
@@ -36,6 +38,18 @@ class Orden(models.Model):
 
     def __str__(self):
         return f"Orden {self.orden_id} - {self.get_estado_display()}"
+    
+class DetalleOrden(models.Model):
+    orden = models.ForeignKey(Orden, on_delete=models.CASCADE, related_name='detalles')
+    herramienta = models.ForeignKey(Herramienta, on_delete=models.CASCADE)
+    cantidad = models.PositiveIntegerField()
+    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def subtotal(self):
+        return self.cantidad * self.precio_unitario
+
+    def __str__(self):
+        return f"{self.cantidad} x {self.herramienta.nombre} en Orden {self.orden.orden_id}"
 
 
 
