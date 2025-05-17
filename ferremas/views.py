@@ -10,6 +10,7 @@ from django.utils import timezone
 from rest_framework import viewsets
 import requests
 import uuid
+from .models import Carrito, ItemCarrito, Herramienta
 
 from .forms import RegistroUsuarioForm, OrdenForm, HerramientaForm
 from .models import Herramienta, Orden
@@ -311,57 +312,47 @@ def pago_exitoso(request):
     else:
         return render(request, 'ferremas/error.html', {'error': 'Pago no autorizado'})
     
+    
+
+@login_required
 def agregar_al_carrito(request, herramienta_id):
     herramienta = get_object_or_404(Herramienta, pk=herramienta_id)
-    carrito = request.session.get('carrito', {})
+    # Obtener o crear el carrito para el usuario
+    carrito, creado = Carrito.objects.get_or_create(usuario=request.user)
 
-    if str(herramienta_id) in carrito:
-        carrito[str(herramienta_id)]['cantidad'] += 1
-    else:
-        carrito[str(herramienta_id)] = {
-            'nombre': herramienta.nombre,
-            'precio': float(herramienta.precio),
-            'cantidad': 1,
-        }
+    # Buscar si ya existe este ítem en el carrito
+    item, item_creado = ItemCarrito.objects.get_or_create(carrito=carrito, herramienta=herramienta)
 
-    request.session['carrito'] = carrito
+    if not item_creado:
+        item.cantidad += 1
+        item.save()
+
     return redirect('ver_carrito')
 
-def ver_carrito(request):
-    carrito = request.session.get('carrito', {})
-    productos = []
-    total_carrito = 0
-    for id_herramienta, info in carrito.items():
-        herramienta = get_object_or_404(Herramienta, id=id_herramienta)
-        cantidad = info['cantidad']
-        precio = herramienta.precio
-        total = precio * cantidad
-        total_carrito += total
-        productos.append({
-            'herramienta': herramienta,
-            'cantidad': cantidad,
-            'precio': precio,
-            'total': total,
-        })
 
-    return render(request, 'carrito.html', {'carrito': productos, 'total_carrito': total_carrito})
+@login_required
+def ver_carrito(request):
+    carrito, creado = Carrito.objects.get_or_create(usuario=request.user)
+    items = carrito.items.all()
+    total = carrito.total()
+    return render(request, 'carrito.html', {'carrito': items, 'total_carrito': total})
+
 
 @require_POST
+@login_required
 def actualizar_cantidad(request, herramienta_id):
     cantidad = int(request.POST.get('cantidad', 1))
-    carrito = request.session.get('carrito', {})
-
-    if str(herramienta_id) in carrito:
-        carrito[str(herramienta_id)]['cantidad'] = cantidad
-
-    request.session['carrito'] = carrito
+    carrito = get_object_or_404(Carrito, usuario=request.user)
+    item = get_object_or_404(ItemCarrito, carrito=carrito, herramienta_id=herramienta_id)
+    item.cantidad = cantidad
+    item.save()
     return redirect('ver_carrito')
 
-@require_POST
-def eliminar_del_carrito(request, herramienta_id):
-    carrito = request.session.get('carrito', {})
-    if str(herramienta_id) in carrito:
-        del carrito[str(herramienta_id)]
 
-    request.session['carrito'] = carrito
+@require_POST
+@login_required
+def eliminar_del_carrito(request, herramienta_id):
+    carrito = get_object_or_404(Carrito, usuario=request.user)
+    item = get_object_or_404(ItemCarrito, carrito=carrito, herramienta_id=herramienta_id)
+    item.delete()
     return redirect('ver_carrito')
