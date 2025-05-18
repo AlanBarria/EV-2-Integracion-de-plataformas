@@ -1,6 +1,7 @@
 from django.urls import path
 from django.contrib.auth.views import LogoutView
 from . import views
+from .views import pago_exitoso, resumen_compra
 
 urlpatterns = [
     path('inicio', views.inicio, name='inicio'),
@@ -15,12 +16,12 @@ urlpatterns = [
     path('api/logout/', views.logout_view, name='logout'),  
     path('catalogo/', views.catalogo, name='catalogo'),
     path('herramienta/<int:herramienta_id>/', views.detalle_herramienta, name='detalle_herramienta'),
-    path('pago_exitoso/', views.pago_exitoso, name='pago_exitoso'),
-    path('resumen_compra/<int:producto_id>/', views.resumen_compra, name='resumen_compra'),
+    path('pago-exitoso/', pago_exitoso, name='pago_exitoso'),
+    path('resumen-compra/', resumen_compra, name='resumen_compra'),
     path('carrito/', views.ver_carrito, name='ver_carrito'),
-    path('agregar-al-carrito/<int:herramienta_id>/', views.agregar_al_carrito, name='agregar_al_carrito'),
+    path('carrito/agregar/<int:herramienta_id>/', views.agregar_al_carrito, name='agregar_al_carrito'),
     path('carrito/actualizar/<int:herramienta_id>/', views.actualizar_cantidad, name='actualizar_cantidad'),
     path('carrito/eliminar/<int:herramienta_id>/', views.eliminar_del_carrito, name='eliminar_del_carrito'),
-   
+    
 
 ]

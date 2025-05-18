@@ -9,13 +9,17 @@ HEADERS = {
     "Content-Type": "application/json"
 }
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 def crear_transaccion(orden_id, sesion_id, monto):
     payload = {
-        'buy_order': orden_id,
-        'session_id': sesion_id,
-        'amount': monto,
-        'return_url': config.RETURN_URL
-    }
+    'buy_order': orden_id,
+    'session_id': sesion_id,
+    'amount': int(monto),  
+    'return_url': config.RETURN_URL
+}
 
     try:
         respuesta = requests.post(f"{config.WEBPAY_API_URL}/transactions", headers=HEADERS, json=payload)
@@ -23,13 +27,12 @@ def crear_transaccion(orden_id, sesion_id, monto):
         if respuesta.status_code in [200, 201]:
             return respuesta.json()
         else:
-            print(f"Error en la solicitud: {respuesta.status_code}, {respuesta.text}")
+            logger.error(f"Error en solicitud a Webpay: {respuesta.status_code} - {respuesta.text}")
             return None
 
     except requests.exceptions.RequestException as e:
-        print(f"Error en la solicitud HTTP: {e}")
+        logger.exception("Excepción al conectar con Webpay")
         return None
-
 
 def confirmar_transaccion(token):
     try:

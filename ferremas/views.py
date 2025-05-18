@@ -3,7 +3,7 @@ from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.utils import timezone
@@ -151,38 +151,45 @@ def crud_herramientas(request):
 @csrf_exempt
 def iniciar_pago(request):
     if request.method == 'POST':
-        producto_id = request.POST.get('producto_id')
-        request.session['producto_id'] = producto_id
+        try:
+            carrito = Carrito.objects.get(usuario=request.user)
+            items = ItemCarrito.objects.filter(carrito=carrito)
+        except Carrito.DoesNotExist:
+            return render(request, 'ferremas/error.html', {'error': 'El carrito está vacío.'})
 
-        orden_id = 'orden123'
-        sesion_id = 'session123'
-        herramienta = Herramienta.objects.get(id=producto_id)
-        monto = int(herramienta.precio)
+        if not items.exists():
+            return render(request, 'ferremas/error.html', {'error': 'El carrito está vacío.'})
 
-        respuesta = crear_transaccion(orden_id, sesion_id, monto)
+        total = 0
+        for item in items:
+            total += item.herramienta.precio * item.cantidad
+
+        orden_id = str(uuid.uuid4())[:12]
+        sesion_id = str(uuid.uuid4())[:12]
+
+        respuesta = crear_transaccion(orden_id, sesion_id, total)
 
         if respuesta and 'token' in respuesta and 'url' in respuesta:
             return redirect(f"{respuesta['url']}?token_ws={respuesta['token']}")
         else:
             return render(request, 'ferremas/error.html', {'error': 'No se pudo iniciar la transacción'})
 
-    return render(request, 'pago.html')
+    return redirect('ver_carrito')
 
+@csrf_exempt
 def confirmar_pago(request):
     token = request.GET.get('token_ws')
+
     if not token:
-        return render(request, 'ferremas/error.html', {'error': 'Token no recibido'})
+        return render(request, 'ferremas/error.html', {'error': 'Token no proporcionado'})
 
     resultado = confirmar_transaccion(token)
 
     if resultado and resultado.get('status') == 'AUTHORIZED':
-        producto_id = request.session.get('producto_id')
-        if producto_id:
-            return redirect('resumen_compra', producto_id=producto_id)
-        return render(request, 'ferremas/resumen_compra.html', {'resultado': resultado})
+        return render(request, 'ferremas/resumen_compra.html', {'detalle': resultado})
     else:
-        return render(request, 'ferremas/error.html', {'error': 'Pago no autorizado'})
-
+        return render(request, 'ferremas/error.html', {'error': 'Pago no autorizado o fallido'})
+    
 def get_series_data(request):
     user = settings.BCCH_USER
     password = settings.BCCH_PASS
@@ -290,10 +297,9 @@ def detalle_herramienta(request, herramienta_id):
     herramienta = get_object_or_404(Herramienta, id=herramienta_id)
     return render(request, 'ferremas/detalle_herramienta.html', {'herramienta': herramienta})
 
-def resumen_compra(request, producto_id):
-    herramienta = get_object_or_404(Herramienta, id=producto_id)
-    return render(request, 'ferremas/resumen_compra.html', {'herramienta': herramienta})
 
+@login_required
+@require_GET
 def pago_exitoso(request):
     token = request.GET.get('token_ws')
 
@@ -303,28 +309,74 @@ def pago_exitoso(request):
     resultado = confirmar_transaccion(token)
 
     if resultado and resultado.get("status") == "AUTHORIZED":
-        producto_id = request.session.get('producto_id')
+        carrito = request.session.get('carrito', {})
+        herramientas = []
 
-        if producto_id:
-            return redirect('resumen_compra', producto_id=producto_id)
-        else:
-            return render(request, 'ferremas/error.html', {'error': 'Producto no encontrado en sesión'})
-    else:
-        return render(request, 'ferremas/error.html', {'error': 'Pago no autorizado'})
-    
-    
+        for item_id, datos in carrito.items():
+            try:
+                herramienta = Herramienta.objects.get(id=int(item_id))
+                herramientas.append({
+                    'nombre': herramienta.nombre,
+                    'imagen': herramienta.imagen,
+                    'categoria': herramienta.get_categoria_display(),
+                    'descripcion': herramienta.descripcion,
+                    'precio': herramienta.precio,
+                    'cantidad': datos['cantidad'],
+                    'subtotal': herramienta.precio * datos['cantidad']
+                })
+            except Herramienta.DoesNotExist:
+                continue
 
-@login_required
+        total = sum(item['subtotal'] for item in herramientas)
+
+        # Guardar en sesión para la vista resumen
+        request.session['resumen_compra'] = {
+            'herramientas': herramientas,
+            'total': total
+        }
+
+        print("RESUMEN GUARDADO:", request.session['resumen_compra'])  # DEBUG
+
+        request.session['carrito'] = {}
+        request.session.modified = True
+        request.session.save()  # <- fuerza el guardado
+
+        return redirect('resumen_compra')
+
+    return render(request, 'ferremas/error.html', {'error': 'Pago no autorizado'})
+
+
+def resumen_compra(request):
+    if 'resumen_compra' not in request.session:
+        return redirect('inicio')
+
+    resumen = request.session['resumen_compra']
+    herramientas = resumen.get('herramientas', [])
+    total = resumen.get('total', 0)
+
+    return render(request, 'ferremas/resumen_compra.html', {
+        'herramientas': herramientas,
+        'total': total
+    })
+
+@require_POST
 def agregar_al_carrito(request, herramienta_id):
+    cantidad = int(request.POST.get('cantidad', 1))
     herramienta = get_object_or_404(Herramienta, pk=herramienta_id)
-    # Obtener o crear el carrito para el usuario
+
+    # Obtener o crear el carrito del usuario
     carrito, creado = Carrito.objects.get_or_create(usuario=request.user)
 
-    # Buscar si ya existe este ítem en el carrito
-    item, item_creado = ItemCarrito.objects.get_or_create(carrito=carrito, herramienta=herramienta)
+    # Buscar si ya existe el item en el carrito
+    item, creado_item = ItemCarrito.objects.get_or_create(
+        carrito=carrito,
+        herramienta=herramienta,
+        defaults={'cantidad': cantidad}
+    )
 
-    if not item_creado:
-        item.cantidad += 1
+    # Si ya existía, sumar la cantidad
+    if not creado_item:
+        item.cantidad += cantidad
         item.save()
 
     return redirect('ver_carrito')
@@ -332,22 +384,46 @@ def agregar_al_carrito(request, herramienta_id):
 
 @login_required
 def ver_carrito(request):
-    carrito, creado = Carrito.objects.get_or_create(usuario=request.user)
-    items = carrito.items.all()
-    total = carrito.total()
-    return render(request, 'carrito.html', {'carrito': items, 'total_carrito': total})
+    try:
+        carrito = Carrito.objects.get(usuario=request.user)
+        items_bd = ItemCarrito.objects.filter(carrito=carrito)
+    except Carrito.DoesNotExist:
+        items_bd = []
 
+    items = []
+    total = 0
+
+    for item in items_bd:
+        herramienta = item.herramienta
+        cantidad = item.cantidad
+        precio = herramienta.precio
+        subtotal = precio * cantidad
+
+        items.append({
+            'herramienta_id': herramienta.id,
+            'nombre': herramienta.nombre,
+            'monto': precio,
+            'cantidad': cantidad,
+            'total': subtotal
+        })
+
+        total += subtotal
+
+    return render(request, 'ferremas/carrito.html', {
+        'items': items,
+        'total_carrito': total
+    })
 
 @require_POST
 @login_required
 def actualizar_cantidad(request, herramienta_id):
-    cantidad = int(request.POST.get('cantidad', 1))
-    carrito = get_object_or_404(Carrito, usuario=request.user)
-    item = get_object_or_404(ItemCarrito, carrito=carrito, herramienta_id=herramienta_id)
-    item.cantidad = cantidad
-    item.save()
-    return redirect('ver_carrito')
-
+    if request.method == 'POST':
+        cantidad = int(request.POST.get('cantidad', 1))
+        carrito = get_object_or_404(Carrito, usuario=request.user)
+        item = get_object_or_404(ItemCarrito, carrito=carrito, herramienta_id=herramienta_id)
+        item.cantidad = cantidad
+        item.save()
+        return redirect('ver_carrito')
 
 @require_POST
 @login_required
@@ -356,3 +432,4 @@ def eliminar_del_carrito(request, herramienta_id):
     item = get_object_or_404(ItemCarrito, carrito=carrito, herramienta_id=herramienta_id)
     item.delete()
     return redirect('ver_carrito')
+
