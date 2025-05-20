@@ -71,3 +71,4 @@ class ItemCarrito(models.Model):
 
     def __str__(self):
         return f"{self.cantidad} x {self.herramienta.nombre}"
+    

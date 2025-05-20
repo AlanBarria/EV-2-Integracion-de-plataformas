@@ -34,3 +34,10 @@ class OrdenForm(forms.Form):
             'class': 'form-control'
         })
     )
+
+
+class HerramientaStockForm(forms.ModelForm):
+    class Meta:
+        model = Herramienta
+        fields = ['stock']
+

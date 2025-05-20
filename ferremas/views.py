@@ -52,13 +52,19 @@ def iniciar_sesion(request):
         usuario = authenticate(request, username=username, password=password)
         if usuario is not None:
             login(request, usuario)
-            if usuario.is_staff:
+            # Revisar dominio del email para redireccionar
+            if usuario.email.endswith('@bodega.cl'):
+                return redirect('almacen')  # Cambia 'almacen' por el nombre de la url correcta
+            elif usuario.email.endswith('@contador.cl'):
+                return redirect('compras_usuarios')  # Cambia 'compras_usuarios' por la url correcta
+            elif usuario.is_staff:
                 return redirect('crud_herramientas')
             else:
                 return redirect('inicio')
         else:
             messages.error(request, 'Nombre de usuario o contraseña incorrectos.')
     return render(request, 'ferremas/login.html')
+
 
 def logout_view(request):
     logout(request)
@@ -432,4 +438,36 @@ def eliminar_del_carrito(request, herramienta_id):
     item = get_object_or_404(ItemCarrito, carrito=carrito, herramienta_id=herramienta_id)
     item.delete()
     return redirect('ver_carrito')
+
+# ferremas/views.py
+
+from django.shortcuts import render, redirect
+from .models import Herramienta
+from .forms import HerramientaStockForm
+
+def almacen(request):
+    herramientas = Herramienta.objects.all()
+
+    if request.method == 'POST':
+        for herramienta in herramientas:
+            stock_field = f'stock_{herramienta.id}'
+            if stock_field in request.POST:
+                nuevo_stock = request.POST.get(stock_field)
+                if nuevo_stock.isdigit():
+                    herramienta.stock = int(nuevo_stock)
+                    herramienta.save()
+        return redirect('almacen')  # Redirige a sí misma tras actualizar
+
+    return render(request, 'ferremas/almacen.html', {'herramientas': herramientas})
+
+@login_required
+def compras_usuarios(request):
+    ordenes = Orden.objects.all().prefetch_related('detalles', 'cliente')
+    total_general = sum(orden.monto for orden in ordenes)
+
+    return render(request, 'ferremas/compras_usuarios.html', {
+        'ordenes': ordenes,
+        'total_general': total_general
+    })
+
 

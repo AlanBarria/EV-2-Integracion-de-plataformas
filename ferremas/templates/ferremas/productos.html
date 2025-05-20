@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<h2>Listado de Productos</h2>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Imagen</th>
+            <th>Código Interno</th>
+            <th>Stock Actual</th>
+            <th>Modificar Stock</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for producto in productos %}
+        <tr>
+            <td>
+                <img src="{{ producto.imagen.url }}" alt="Imagen de {{ producto.nombre }}" width="100">
+            </td>
+            <td>{{ producto.codigo_interno }}</td>
+            <td>{{ producto.stock }}</td>
+            <td>
+                <form action="{% url 'modificar_stock' producto.id %}" method="post">
+                    {% csrf_token %}
+                    <input type="number" name="nuevo_stock" value="{{ producto.stock }}" min="0">
+                    <button type="submit">Actualizar</button>
+                </form>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">No hay productos registrados.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

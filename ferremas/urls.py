@@ -22,6 +22,7 @@ urlpatterns = [
     path('carrito/agregar/<int:herramienta_id>/', views.agregar_al_carrito, name='agregar_al_carrito'),
     path('carrito/actualizar/<int:herramienta_id>/', views.actualizar_cantidad, name='actualizar_cantidad'),
     path('carrito/eliminar/<int:herramienta_id>/', views.eliminar_del_carrito, name='eliminar_del_carrito'),
-    
+    path('almacen/', views.almacen, name='almacen'),
+    path('compras/', views.compras_usuarios, name='compras_usuarios'),
 
 ]
