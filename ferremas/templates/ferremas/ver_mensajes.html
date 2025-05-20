@@ -1,0 +1,79 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mensajes de Contacto - Ferremas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{% static 'css/inicio.css' %}" rel="stylesheet">
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold text-warning" href="{% url 'inicio' %}">
+            <img src="{% static 'ferremas/logo.png' %}" alt="Ferremas" width="30" height="30" class="d-inline-block align-text-top">
+            Ferremas
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto"></ul>
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'logout' %}">Cerrar Sesión</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- CONTENIDO PRINCIPAL -->
+<main class="flex-grow-1">
+    <div class="container py-5">
+        <h1 class="mb-4 text-primary">📬 Mensajes de Contacto</h1>
+
+        {% if mensajes %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover bg-white shadow">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Correo</th>
+                        <th>Mensaje</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mensaje in mensajes %}
+                    <tr>
+                        <td>{{ mensaje.usuario.username }}</td>
+                        <td>{{ mensaje.usuario.email }}</td>
+                        <td>{{ mensaje.mensaje }}</td>
+                        <td>{{ mensaje.fecha_envio }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">No hay mensajes de contacto.</div>
+        {% endif %}
+
+        <a href="{% url 'inicio' %}" class="btn btn-outline-secondary mt-4">← Volver al Inicio</a>
+    </div>
+</main>
+
+<!-- FOOTER -->
+<footer class="bg-dark text-white text-center py-4 mt-auto">
+    <div class="container">
+        <p class="mb-0">&copy; 2025 Ferremas. Todos los derechos reservados.</p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

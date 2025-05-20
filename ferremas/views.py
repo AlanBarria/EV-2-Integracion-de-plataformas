@@ -29,16 +29,16 @@ def enviar_mensaje(request):
                 usuario=request.user,
                 mensaje=form.cleaned_data['mensaje']
             )
-            return redirect('ver_mensajes')
+            return redirect('inicio')
     else:
         form = MensajeContactoForm()
 
-    return render(request, 'enviar_mensaje.html', {'form': form})
+    return render(request, 'ferremas/enviar_mensaje.html', {'form': form})
 
 @login_required
 def ver_mensajes(request):
     mensajes = MensajeContacto.objects.all().order_by('-fecha_envio')
-    return render(request, 'ver_mensajes.html', {'mensajes': mensajes})
+    return render(request, 'ferremas/ver_mensajes.html', {'mensajes': mensajes})
 
 
 @never_cache
@@ -53,7 +53,7 @@ def inicio(request):
     return render(request, 'ferremas/inicio.html', {'herramientas': herramientas})
 
 def admin_vista(request):
-    return render(request, 'ferremas/admin_vista.html')
+    return render(request, 'ferremas/ver_mensajes.html')
 
 def registro(request):
     if request.method == 'POST':
