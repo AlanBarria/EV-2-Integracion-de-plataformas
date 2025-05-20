@@ -11,13 +11,14 @@ from rest_framework import viewsets
 import requests
 import uuid
 from .models import Carrito, ItemCarrito, Herramienta
-
+from decimal import Decimal
 from .forms import RegistroUsuarioForm, OrdenForm, HerramientaForm
 from .models import Herramienta, Orden
 from .serializers import HerramientaSerializer, OrdenSerializer
 from ferremas.webpay import confirmar_transaccion, crear_transaccion
+from django.views.decorators.cache import never_cache
 
-
+@never_cache
 @login_required
 def inicio(request):
     categoria = request.GET.get('categoria')
@@ -157,19 +158,31 @@ def crud_herramientas(request):
 @csrf_exempt
 def iniciar_pago(request):
     if request.method == 'POST':
-        try:
-            carrito = Carrito.objects.get(usuario=request.user)
-            items = ItemCarrito.objects.filter(carrito=carrito)
-        except Carrito.DoesNotExist:
-            return render(request, 'ferremas/error.html', {'error': 'El carrito está vacío.'})
+        producto_id = request.POST.get('producto_id')
 
-        if not items.exists():
-            return render(request, 'ferremas/error.html', {'error': 'El carrito está vacío.'})
+        if producto_id:
+            # Compra directa de un producto individual
+            try:
+                producto = Herramienta.objects.get(id=producto_id)
+                cantidad = int(request.POST.get('cantidad', 1))
+                total = producto.precio * cantidad
+            except Herramienta.DoesNotExist:
+                return render(request, 'ferremas/error.html', {'error': 'Producto no encontrado.'})
+        else:
+            #Compra desde el carrito
+            try:
+                carrito = Carrito.objects.get(usuario=request.user)
+                items = ItemCarrito.objects.filter(carrito=carrito)
 
-        total = 0
-        for item in items:
-            total += item.herramienta.precio * item.cantidad
+                if not items.exists():
+                    return render(request, 'ferremas/error.html', {'error': 'El carrito está vacío.'})
+                
+                total = sum(item.herramienta.precio * item.cantidad for item in items)
 
+            except Carrito.DoesNotExist:
+                return render(request, 'ferremas/error.html', {'error': 'El carrito está vacío.'})
+
+            
         orden_id = str(uuid.uuid4())[:12]
         sesion_id = str(uuid.uuid4())[:12]
 
@@ -239,6 +252,15 @@ def convert_currency(request):
         exchange_rate = 850.0
         converted_amount = amount * exchange_rate
 
+        if from_currency == 'USD' and to_currency == 'CLP':
+            converted_amount = amount * exchange_rate
+        elif from_currency == 'CLP' and to_currency == 'USD':
+            converted_amount = amount / exchange_rate
+        elif from_currency == to_currency:
+            converted_amount = amount
+        else:
+            return JsonResponse({'error': 'Conversión no soportada'}, status=400)
+
         return JsonResponse({
             'original_amount': amount,
             'from_currency': from_currency,
@@ -248,6 +270,7 @@ def convert_currency(request):
         })
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
+    
     
 def get_exchange_rate():
     user = settings.BCCH_USER
@@ -268,19 +291,28 @@ def get_exchange_rate():
             return exchange_rate
     return 850.0
 
+@login_required
+@require_GET
 def update_cart_total(request):
-    cart_items = get_cart_items()
-    total_usd = sum(item.price for item in cart_items)
-    exchange_rate = get_exchange_rate()
-    total_clp = total_usd * exchange_rate
+    try:
+        carrito = Carrito.objects.get(usuario=request.user)
+        cart_items = ItemCarrito.objects.filter(carrito=carrito)
+    except Carrito.DoesNotExist:
+        cart_items = []
+
+    total_clp = sum(item.herramienta.precio * item.cantidad for item in cart_items)
+    
+    exchange_rate = Decimal(str(get_exchange_rate()))  # Convertir a Decimal para evitar error
+    total_usd = total_clp * exchange_rate
 
     response_data = {
-        'total_usd': total_usd,
-        'total_clp': total_clp,
-        'exchange_rate': exchange_rate,
+        'total_usd': float(total_usd),  # opcional: convertir a float para JSON
+        'total_clp': float(total_clp),
+        'exchange_rate': float(exchange_rate),
     }
 
     return JsonResponse(response_data)
+
 
 class HerramientaViewSet(viewsets.ModelViewSet):
     queryset = Herramienta.objects.all()
