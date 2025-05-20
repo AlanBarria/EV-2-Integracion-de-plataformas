@@ -76,15 +76,16 @@ def iniciar_sesion(request):
         usuario = authenticate(request, username=username, password=password)
         if usuario is not None:
             login(request, usuario)
-            # Revisar dominio del email para redireccionar
-            if usuario.email.endswith('@bodega.cl'):
-                return redirect('almacen')  # Cambia 'almacen' por el nombre de la url correcta
-            elif usuario.email.endswith('@contador.cl'):
-                return redirect('compras_usuarios')  # Cambia 'compras_usuarios' por la url correcta
-            elif usuario.is_staff:
+            # Si es superusuario, redirige a ver_mensajes
+            if usuario.is_superuser:
+                return redirect('ver_mensajes')
+            elif usuario.email.endswith('@bodega.cl'):
                 return redirect('crud_herramientas')
+            elif usuario.email.endswith('@contador.cl'):
+                return redirect('compras_usuarios')
             else:
                 return redirect('inicio')
+
         else:
             messages.error(request, 'Nombre de usuario o contraseña incorrectos.')
     return render(request, 'ferremas/login.html')
@@ -504,6 +505,27 @@ def almacen(request):
     herramientas = Herramienta.objects.all()
 
     if request.method == 'POST':
+        if 'nuevo_producto' in request.POST:
+            # Crear una nueva herramienta
+            nombre = request.POST.get('nombre')
+            codigo = request.POST.get('codigo')
+            descripcion = request.POST.get('descripcion')
+            precio = request.POST.get('precio')
+            stock = request.POST.get('stock')
+            categoria = request.POST.get('categoria')
+            
+            if nombre and codigo and precio and stock:
+                Herramienta.objects.create(
+                    nombre=nombre,
+                    codigo_interno=codigo,
+                    descripcion=descripcion,
+                    precio=precio,
+                    stock=stock,
+                    categoria=categoria
+                )
+            return redirect('almacen')
+
+        # Actualización de stock existente
         for herramienta in herramientas:
             stock_field = f'stock_{herramienta.id}'
             if stock_field in request.POST:
@@ -511,7 +533,7 @@ def almacen(request):
                 if nuevo_stock.isdigit():
                     herramienta.stock = int(nuevo_stock)
                     herramienta.save()
-        return redirect('almacen')  # Redirige a sí misma tras actualizar
+        return redirect('almacen')
 
     return render(request, 'ferremas/almacen.html', {'herramientas': herramientas})
 

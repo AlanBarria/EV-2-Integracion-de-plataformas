@@ -23,7 +23,7 @@ class HerramientaForm(forms.ModelForm):
             'marca',
             'nombre',
             'descripcion',
-            'categoria',  # <-- Campo agregado
+            'categoria', 
             'precio',
             'stock',
             'imagen',
