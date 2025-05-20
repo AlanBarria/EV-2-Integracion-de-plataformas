@@ -22,6 +22,7 @@
 
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
+                <!-- Categorías dropdown -->
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="categoriaDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         Categorías
@@ -34,6 +35,17 @@
                         <li><a class="dropdown-item {% if request.GET.categoria == 'otros' %}active{% endif %}" href="{% url 'inicio' %}?categoria=otros">Otros</a></li>
                     </ul>
                 </li>
+
+                <!-- Conversor simple dropdown -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="conversorDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Moneda: <span id="monedaSeleccionada">CLP</span>
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="conversorDropdown">
+                        <li><a class="dropdown-item moneda-option active" href="#" data-moneda="CLP">CLP</a></li>
+                        <li><a class="dropdown-item moneda-option" href="#" data-moneda="USD">USD</a></li>
+                    </ul>
+                </li>
             </ul>
 
             <ul class="navbar-nav">
@@ -44,11 +56,8 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'enviar_mensaje' %}">
-                        Atencion Cliente
+                        Atención Cliente
                     </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#conversor">Conversor</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'logout' %}">Cerrar Sesión</a>
@@ -74,7 +83,7 @@
                             <h5 class="card-title text-primary fw-bold">{{ herramienta.nombre }}</h5>
                             <p class="card-text small">{{ herramienta.descripcion }}</p>
                             <p class="card-text"><span class="badge bg-secondary">{{ herramienta.get_categoria_display }}</span></p>
-                            <p class="card-text fw-bold text-success">$ {{ herramienta.precio }}</p>
+                            <p class="card-text fw-bold text-success">$ <span class="precio-valor">{{ herramienta.precio|floatformat:2 }}</span></p>
                         </div>
                     </div>
                 </a>
@@ -87,35 +96,6 @@
     </div>
 </div>
 
-<!-- Conversor -->
-<hr class="my-5" id="conversor">
-<div class="container">
-    <h2 class="text-center mb-4">Conversor de Moneda</h2>
-    <form id="currencyForm" class="row g-3 justify-content-center">
-        <div class="col-md-3">
-            <input type="number" step="0.01" min="0" class="form-control" name="amount" id="amountInput" placeholder="Monto en USD" required>
-        </div>
-        <div class="col-md-2">
-            <select class="form-select" name="from_currency">
-                <option value="USD">USD</option>
-                <option value="CLP">CLP</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <select class="form-select" name="to_currency">
-                <option value="CLP">CLP</option>
-                <option value="USD">USD</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <button type="submit" class="btn btn-success w-100">Convertir</button>
-        </div>
-    </form>
-    <div class="text-center mt-4">
-        <h4 id="result"></h4>
-    </div>
-</div>
-
 <!-- FOOTER -->
 <footer class="bg-dark text-white text-center py-4 mt-5">
     <div class="container">
@@ -124,33 +104,39 @@
 </footer>
 
 <script>
-    document.getElementById('currencyForm').addEventListener('submit', function(event) {
-        event.preventDefault();
+    // Tasa fija de cambio (puedes modificar o traer de backend)
+    const tasaCLPtoUSD = 900; // Ejemplo: 1 USD = 900 CLP
 
-        const form = event.target;
-        const formData = new FormData(form);
-        let amount = formData.get("amount").replace(',', '.');
+    document.querySelectorAll('.moneda-option').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
 
-        const params = new URLSearchParams({
-            amount: amount,
-            from_currency: formData.get("from_currency"),
-            to_currency: formData.get("to_currency")
-        });
+            // Quitar active de todas opciones
+            document.querySelectorAll('.moneda-option').forEach(i => i.classList.remove('active'));
+            this.classList.add('active');
 
-        fetch(`/api/convert/?${params.toString()}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    document.getElementById('result').textContent = 'Error: ' + data.error;
+            const moneda = this.getAttribute('data-moneda');
+            document.getElementById('monedaSeleccionada').textContent = moneda;
+
+            const cards = document.querySelectorAll('.herramienta-card');
+            cards.forEach(card => {
+                const precioOriginal = parseFloat(card.getAttribute('data-precio'));
+                let nuevoPrecio;
+
+                if (moneda === 'USD') {
+                    // Convertir CLP a USD
+                    nuevoPrecio = precioOriginal / tasaCLPtoUSD;
                 } else {
-                    document.getElementById('result').textContent =
-                        `${data.original_amount} ${data.from_currency} = ${data.converted_amount.toFixed(2)} ${data.to_currency} (Tasa: ${data.exchange_rate})`;
+                    // Mostrar precio en CLP original
+                    nuevoPrecio = precioOriginal;
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('result').textContent = 'Error al convertir moneda.';
+
+                const precioElemento = card.querySelector('.precio-valor');
+                if (precioElemento) {
+                    precioElemento.textContent = nuevoPrecio.toFixed(2);
+                }
             });
+        });
     });
 </script>
 
