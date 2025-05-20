@@ -25,5 +25,7 @@ urlpatterns = [
     path('almacen/', views.almacen, name='almacen'),
     path('compras/', views.compras_usuarios, name='compras_usuarios'),
     path('api/update_cart_total/', views.update_cart_total, name='update_cart_total'),
+    path('enviar-mensaje/', views.enviar_mensaje, name='enviar_mensaje'),
+    path('ver-mensajes/', views.ver_mensajes, name='ver_mensajes'),
 
 ]

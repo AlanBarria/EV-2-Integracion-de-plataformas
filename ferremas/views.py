@@ -17,6 +17,29 @@ from .models import Herramienta, Orden
 from .serializers import HerramientaSerializer, OrdenSerializer
 from ferremas.webpay import confirmar_transaccion, crear_transaccion
 from django.views.decorators.cache import never_cache
+from .models import MensajeContacto
+from .forms import MensajeContactoForm
+
+@login_required
+def enviar_mensaje(request):
+    if request.method == 'POST':
+        form = MensajeContactoForm(request.POST)
+        if form.is_valid():
+            MensajeContacto.objects.create(
+                usuario=request.user,
+                mensaje=form.cleaned_data['mensaje']
+            )
+            return redirect('ver_mensajes')
+    else:
+        form = MensajeContactoForm()
+
+    return render(request, 'enviar_mensaje.html', {'form': form})
+
+@login_required
+def ver_mensajes(request):
+    mensajes = MensajeContacto.objects.all().order_by('-fecha_envio')
+    return render(request, 'ver_mensajes.html', {'mensajes': mensajes})
+
 
 @never_cache
 @login_required
@@ -379,7 +402,7 @@ def pago_exitoso(request):
         request.session.modified = True
         request.session.save()  # <- fuerza el guardado
 
-        return redirect('resumen_compra')
+        return render(request, 'resumen_compra')
 
     return render(request, 'ferremas/error.html', {'error': 'Pago no autorizado'})
 

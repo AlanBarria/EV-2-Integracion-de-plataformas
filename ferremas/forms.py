@@ -2,7 +2,11 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from .models import Herramienta
+from django import forms
 
+class MensajeContactoForm(forms.Form):
+    mensaje = forms.CharField(widget=forms.Textarea, label="Mensaje")
+    
 class RegistroUsuarioForm(UserCreationForm):
     email = forms.EmailField(required=True)
 

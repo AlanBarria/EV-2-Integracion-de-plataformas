@@ -1,0 +1,10 @@
+<h1>Enviar Mensaje de Contacto</h1>
+
+<p>Usuario: {{ request.user.username }}</p>
+<p>Correo: {{ request.user.email }}</p>
+
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Enviar</button>
+</form>

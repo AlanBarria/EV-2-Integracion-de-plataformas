@@ -1,6 +1,14 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+class MensajeContacto(models.Model):
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+    mensaje = models.TextField()
+    fecha_envio = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Mensaje de {self.usuario.username} - {self.usuario.email}"
+
 class Herramienta(models.Model):
     CATEGORIAS = [
         ('electricas', 'Eléctricas'),
