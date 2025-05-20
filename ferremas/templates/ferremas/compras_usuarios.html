@@ -8,7 +8,7 @@
     <link href="{% static 'css/inicio.css' %}" rel="stylesheet">
 </head>
 
-<body class="bg-light">
+<body class="d-flex flex-column min-vh-100">
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
         <div class="container">
@@ -34,7 +34,9 @@
         </div>
     </nav>
 
+
 <!-- CONTENIDO -->
+<main class="flex-grow-1">
 <div class="container py-5">
     <h1 class="mb-4">🧾 Compras Realizadas por los Usuarios</h1>
 
@@ -80,6 +82,7 @@
     {% endif %}
 
 </div>
+</main>
 
 <!-- FOOTER -->
 <footer class="bg-dark text-white text-center py-4 mt-5">
