@@ -9,6 +9,8 @@ from django.conf import settings
 from django.utils import timezone
 from rest_framework import viewsets
 import requests
+from django.db.models import Q
+from django.contrib.auth.models import User 
 import uuid
 from .models import Carrito, ItemCarrito, Herramienta
 from decimal import Decimal
@@ -25,14 +27,14 @@ def enviar_mensaje(request):
     if request.method == 'POST':
         form = MensajeContactoForm(request.POST)
         if form.is_valid():
-            MensajeContacto.objects.create(
-                usuario=request.user,
-                mensaje=form.cleaned_data['mensaje']
-            )
+            mensaje = form.save(commit=False)
+            mensaje.usuario = request.user
+            mensaje.save()
+            messages.success(request, 'Mensaje enviado correctamente')
             return redirect('inicio')
     else:
         form = MensajeContactoForm()
-
+    
     return render(request, 'ferremas/enviar_mensaje.html', {'form': form})
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -40,13 +42,41 @@ from django.contrib.auth.decorators import login_required
 from .models import MensajeContacto, RespuestaMensaje
 from .forms import RespuestaMensajeForm
 
+from django.db.models import Q
+
 @login_required
 def ver_mensajes(request):
-    mensajes = MensajeContacto.objects.all().order_by('-fecha_envio')
-    form = RespuestaMensajeForm()
+    # Filtros
+    search_query = request.GET.get('search', '')
+    usuario_filter = request.GET.get('usuario', '')
+    tipo_filter = request.GET.get('tipo', '')
+    
+    mensajes = MensajeContacto.objects.all()
+    
+    # Búsqueda por contenido (mensaje o nombre de usuario)
+    if search_query:
+        mensajes = mensajes.filter(
+            Q(mensaje__icontains=search_query)
+        )
+    
+    # Filtro por usuario (búsqueda parcial en username)
+    if usuario_filter:
+        mensajes = mensajes.filter(
+            Q(usuario__username__icontains=usuario_filter)
+        )
+    
+    # Filtro por tipo
+    if tipo_filter:
+        mensajes = mensajes.filter(tipo=tipo_filter)
+    
+    # Ordenamiento por defecto
+    mensajes = mensajes.order_by('-fecha_envio')
+    
     return render(request, 'ferremas/ver_mensajes.html', {
         'mensajes': mensajes,
-        'form_respuesta': form
+        'search_query': search_query,
+        'usuario_filter': usuario_filter,
+        'tipo_filter': tipo_filter,
     })
 
 @login_required

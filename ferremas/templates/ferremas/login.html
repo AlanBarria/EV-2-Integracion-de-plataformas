@@ -9,13 +9,7 @@
     <div class="login-container">
         <h2>Iniciar Sesión</h2>
 
-        {% if messages %}
-            <ul class="messages">
-            {% for message in messages %}
-                <li>{{ message }}</li>
-            {% endfor %}
-            </ul>
-        {% endif %}
+        
 
         <form method="post" class="login-form">
             {% csrf_token %}

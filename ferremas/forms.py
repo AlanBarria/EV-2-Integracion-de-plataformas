@@ -4,8 +4,21 @@ from django.contrib.auth.forms import UserCreationForm
 from .models import Herramienta
 from django import forms
 
-class MensajeContactoForm(forms.Form):
-    mensaje = forms.CharField(widget=forms.Textarea, label="Mensaje")
+from django import forms
+from .models import MensajeContacto
+
+class MensajeContactoForm(forms.ModelForm):
+    class Meta:
+        model = MensajeContacto
+        fields = ['tipo', 'mensaje']
+        widgets = {
+            'tipo': forms.Select(attrs={'class': 'form-select'}),
+            'mensaje': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Escribe tu mensaje aquí...'
+            })
+        }
     
 class RegistroUsuarioForm(UserCreationForm):
     email = forms.EmailField(required=True)
@@ -60,3 +73,4 @@ class RespuestaMensajeForm(forms.ModelForm):
                 'placeholder': 'Escribe tu respuesta aquí...'
             })
         }
+

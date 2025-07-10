@@ -5,12 +5,19 @@ from django.db import models
 from django.contrib.auth.models import User
 
 class MensajeContacto(models.Model):
+    TIPO_MENSAJE = [
+        ('duda', 'Duda'),
+        ('queja', 'Queja'),
+        ('sugerencia', 'Sugerencia'),
+    ]
+    
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+    tipo = models.CharField(max_length=20, choices=TIPO_MENSAJE, default='duda')
     mensaje = models.TextField()
     fecha_envio = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
-        return f"Mensaje de {self.usuario.username}"
+        return f"{self.get_tipo_display()} de {self.usuario.username}"
 
 class RespuestaMensaje(models.Model):
     mensaje_original = models.ForeignKey(MensajeContacto, on_delete=models.CASCADE, related_name='respuestas')
@@ -92,3 +99,4 @@ class ItemCarrito(models.Model):
     def __str__(self):
         return f"{self.cantidad} x {self.herramienta.nombre}"
     
+

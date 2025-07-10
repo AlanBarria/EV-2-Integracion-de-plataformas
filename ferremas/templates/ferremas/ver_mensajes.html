@@ -1,123 +1,190 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <title>Mensajes de Contacto - Ferremas</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="{% static 'css/inicio.css' %}" rel="stylesheet">
 </head>
+
 <body class="d-flex flex-column min-vh-100">
 
-<!-- NAVBAR -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
-    <div class="container">
-        <a class="navbar-brand fw-bold text-warning" href="{% url 'inicio' %}">
-            <img src="{% static 'ferremas/logo.png' %}" alt="Ferremas" width="30" height="30" class="d-inline-block align-text-top">
-            Ferremas
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-warning" href="{% url 'inicio' %}">
+                <img src="{% static 'ferremas/logo.png' %}" alt="Ferremas" width="30" height="30"
+                    class="d-inline-block align-text-top">
+                Ferremas
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto"></ul>
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'logout' %}">Cerrar Sesión</a>
-                </li>
-            </ul>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto"></ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'logout' %}">Cerrar Sesión</a>
+                    </li>
+                </ul>
+            </div>
         </div>
-    </div>
-</nav>
+    </nav>
 
-<!-- CONTENIDO PRINCIPAL -->
-<main class="flex-grow-1">
-    <div class="container py-5">
-        <h1 class="mb-4 text-primary">📬 Mensajes de Contacto</h1>
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="flex-grow-1">
+        <div class="container py-5">
+            <h1 class="mb-4 text-primary">📬 Mensajes de Contacto</h1>
 
-        {% if mensajes %}
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover bg-white shadow">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Usuario</th>
-                        <th>Correo</th>
-                        <th>Mensaje</th>
-                        <th>Fecha</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for mensaje in mensajes %}
-                    <tr>
-                        <td>{{ mensaje.usuario.username }}</td>
-                        <td>{{ mensaje.usuario.email }}</td>
-                        <td>{{ mensaje.mensaje }}</td>
-                        <td>{{ mensaje.fecha_envio }}</td>
-                        <td>
-                            {% if mensaje.respondido %}
-                                <span class="badge bg-success">Respondido</span>
-                            {% else %}
-                                <span class="badge bg-warning text-dark">Pendiente</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#respuestaModal{{ mensaje.id }}">
-                                Responder
-                            </button>
-                            <form method="post" action="{% url 'eliminar_mensaje' mensaje.id %}" style="display: inline;">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Estás seguro de que quieres eliminar este mensaje?')">
-                                    Eliminar
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-
-                    <!-- Modal para responder -->
-                    <div class="modal fade" id="respuestaModal{{ mensaje.id }}" tabindex="-1" aria-labelledby="respuestaModalLabel{{ mensaje.id }}" aria-hidden="true">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="respuestaModalLabel{{ mensaje.id }}">Responder a {{ mensaje.usuario.username }}</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <form method="post" action="{% url 'responder_mensaje' mensaje.id %}">
-                                    <div class="modal-body">
-                                        {% csrf_token %}
-                                        <div class="mb-3">
-                                            <label class="form-label">Mensaje original:</label>
-                                            <textarea class="form-control" readonly>{{ mensaje.mensaje }}</textarea>
-                                        </div>
-                                        {{ form_respuesta.as_p }}
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                        <button type="submit" class="btn btn-primary">Enviar respuesta</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <!-- Búsqueda por contenido -->
+            <div class="col-md-4">
+                <input 
+                    type="text" 
+                    name="search" 
+                    class="form-control" 
+                    placeholder="Buscar en mensajes..."
+                    value="{{ search_query }}"
+                >
+            </div>
+            
+            <!-- Filtro por usuario (dropdown) -->
+            <div class="col-md-3">
+                <input 
+                    type="text" 
+                    name="usuario" 
+                    class="form-control" 
+                    placeholder="Filtrar por usuario"
+                    value="{{ usuario_filter }}"
+                >
+            </div>
+            
+            <!-- Filtro por tipo -->
+            <div class="col-md-3">
+                <select name="tipo" class="form-select">
+                    <option value="">Todos los tipos</option>
+                    <option value="duda" {% if tipo_filter == 'duda' %}selected{% endif %}>Duda</option>
+                    <option value="queja" {% if tipo_filter == 'queja' %}selected{% endif %}>Queja</option>
+                    <option value="sugerencia" {% if tipo_filter == 'sugerencia' %}selected{% endif %}>Sugerencia</option>
+                </select>
+            </div>
+            
+            <!-- Botones -->
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel"></i> Filtrar
+                </button>
+            </div>
+        </form>
+        
+        <!-- Resetear filtros -->
+        {% if search_query or usuario_filter or tipo_filter %}
+        <div class="mt-3">
+            <a href="{% url 'ver_mensajes' %}" class="btn btn-sm btn-outline-secondary">
+                Limpiar filtros
+            </a>
         </div>
-        {% else %}
-        <div class="alert alert-info">No hay mensajes de contacto.</div>
         {% endif %}
     </div>
-</main>
+</div>
 
-<!-- FOOTER -->
-<footer class="bg-dark text-white text-center py-4 mt-auto">
-    <div class="container">
-        <p class="mb-0">&copy; 2025 Ferremas. Todos los derechos reservados.</p>
-    </div>
-</footer>
+            {% if mensajes %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover bg-white shadow">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Correo</th>
+                            <th>Tipo</th>
+                            <th>Mensaje</th>
+                            <th>Fecha</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mensaje in mensajes %}
+                        <tr>
+                            <td>{{ mensaje.usuario.username }}</td>
+                            <td>{{ mensaje.usuario.email }}</td>
+                            <td>{{ mensaje.get_tipo_display }}</td>
+                            <td>{{ mensaje.mensaje }}</td>
+                            <td>{{ mensaje.fecha_envio }}</td>
+                            <td>
+                                {% if mensaje.respondido %}
+                                <span class="badge bg-success">Respondido</span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">Pendiente</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-info btn-sm" data-bs-toggle="modal"
+                                    data-bs-target="#respuestaModal{{ mensaje.id }}">
+                                    Responder
+                                </button>
+                                <form method="post" action="{% url 'eliminar_mensaje' mensaje.id %}"
+                                    style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-sm"
+                                        onclick="return confirm('¿Estás seguro de que quieres eliminar este mensaje?')">
+                                        Eliminar
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+                        <!-- Modal para responder -->
+                        <div class="modal fade" id="respuestaModal{{ mensaje.id }}" tabindex="-1"
+                            aria-labelledby="respuestaModalLabel{{ mensaje.id }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="respuestaModalLabel{{ mensaje.id }}">Responder a {{
+                                            mensaje.usuario.username }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                    </div>
+                                    <form method="post" action="{% url 'responder_mensaje' mensaje.id %}">
+                                        <div class="modal-body">
+                                            {% csrf_token %}
+                                            <div class="mb-3">
+                                                <label class="form-label">Mensaje original:</label>
+                                                <textarea class="form-control" readonly>{{ mensaje.mensaje }}</textarea>
+                                            </div>
+                                            {{ form_respuesta.as_p }}
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary"
+                                                data-bs-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-primary">Enviar respuesta</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">No hay mensajes de contacto.</div>
+            {% endif %}
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-dark text-white text-center py-4 mt-auto">
+        <div class="container">
+            <p class="mb-0">&copy; 2025 Ferremas. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

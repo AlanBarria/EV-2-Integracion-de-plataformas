@@ -63,7 +63,8 @@
             {% for mensaje in mensajes %}
             <div class="card mb-4">
                 <div class="card-header">
-                    <strong>Mensaje enviado el:</strong> {{ mensaje.fecha_envio }}
+                    <strong>{{ mensaje.get_tipo_display|upper }}</strong> - 
+        Enviado el: {{ mensaje.fecha_envio|date:"d/m/Y H:i" }}
                 </div>
                 <div class="card-body">
                     <p class="card-text">{{ mensaje.mensaje }}</p>
@@ -96,9 +97,11 @@
         </div>
     </main>
 
-    <!-- FOOTER (igual que en ver_mensajes.html) -->
+    <!-- FOOTER -->
     <footer class="bg-dark text-white text-center py-4 mt-auto">
-        <!-- ... mismo footer ... -->
+        <div class="container">
+            <p class="mb-0">&copy; 2025 Ferremas. Todos los derechos reservados.</p>
+        </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

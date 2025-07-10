@@ -59,16 +59,20 @@
     <!-- FORMULARIO DE CONTACTO -->
     <main class="flex-grow-1">
         <div class="container contact-container">
-            <h2 class="text-center mb-4">📬 Enviar Mensaje de Contacto</h2>
+            <h2 class="text-center mb-4">📬 Enviar Queja o Duda</h2>
 
-            <p class="center-text"><strong>Usuario:</strong> {{ request.user.username }}</p>
-            <p class="center-text"><strong>Correo:</strong> {{ request.user.email }}</p>
+            <p><strong>Usuario:</strong> {{ request.user.username }}</p>
+            <p><strong>Correo:</strong> {{ request.user.email }}</p>
 
             <form method="post">
                 {% csrf_token %}
                 <div class="mb-3">
-                    <textarea name="mensaje" class="form-control" placeholder="Escribe tu mensaje aquí..."
-                        required></textarea>
+                    <label class="form-label">Tipo de mensaje</label>
+                    {{ form.tipo }}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Mensaje</label>
+                    {{ form.mensaje }}
                 </div>
                 <div class="d-grid">
                     <button type="submit" class="btn btn-primary">Enviar</button>
@@ -78,6 +82,7 @@
             <a href="{% url 'inicio' %}" class="btn btn-outline-secondary mt-4">← Vorlver al inicio</a>
         </div>
     </main>
+
 
     <!-- FOOTER -->
     <footer class="bg-dark text-white text-center py-4 mt-5">
