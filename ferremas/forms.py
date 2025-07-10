@@ -45,3 +45,18 @@ class HerramientaStockForm(forms.ModelForm):
         model = Herramienta
         fields = ['stock']
 
+
+from django import forms
+from .models import RespuestaMensaje
+
+class RespuestaMensajeForm(forms.ModelForm):
+    class Meta:
+        model = RespuestaMensaje
+        fields = ['respuesta']
+        widgets = {
+            'respuesta': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Escribe tu respuesta aquí...'
+            })
+        }

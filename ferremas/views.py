@@ -35,11 +35,45 @@ def enviar_mensaje(request):
 
     return render(request, 'ferremas/enviar_mensaje.html', {'form': form})
 
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from .models import MensajeContacto, RespuestaMensaje
+from .forms import RespuestaMensajeForm
+
 @login_required
 def ver_mensajes(request):
     mensajes = MensajeContacto.objects.all().order_by('-fecha_envio')
-    return render(request, 'ferremas/ver_mensajes.html', {'mensajes': mensajes})
+    form = RespuestaMensajeForm()
+    return render(request, 'ferremas/ver_mensajes.html', {
+        'mensajes': mensajes,
+        'form_respuesta': form
+    })
 
+@login_required
+def responder_mensaje(request, mensaje_id):
+    mensaje = get_object_or_404(MensajeContacto, id=mensaje_id)
+    if request.method == 'POST':
+        form = RespuestaMensajeForm(request.POST)
+        if form.is_valid():
+            respuesta = form.save(commit=False)
+            respuesta.mensaje_original = mensaje
+            respuesta.administrador = request.user
+            respuesta.save()
+            return redirect('ver_mensajes')
+    return redirect('ver_mensajes')
+
+@login_required
+def ver_respuestas_usuario(request):
+    mensajes = MensajeContacto.objects.filter(usuario=request.user).order_by('-fecha_envio')
+    return render(request, 'ferremas/ver_respuestas_usuario.html', {'mensajes': mensajes})
+
+@login_required
+@require_POST
+def eliminar_mensaje(request, mensaje_id):
+    mensaje = get_object_or_404(MensajeContacto, id=mensaje_id)
+    mensaje.delete()
+    messages.success(request, 'Mensaje eliminado correctamente.')
+    return redirect('ver_mensajes')
 
 @never_cache
 @login_required

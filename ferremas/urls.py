@@ -26,6 +26,12 @@ urlpatterns = [
     path('compras/', views.compras_usuarios, name='compras_usuarios'),
     path('api/update_cart_total/', views.update_cart_total, name='update_cart_total'),
     path('enviar-mensaje/', views.enviar_mensaje, name='enviar_mensaje'),
-    path('ver-mensajes/', views.ver_mensajes, name='ver_mensajes'),
+    path('mensajes/', views.ver_mensajes, name='ver_mensajes'),
+    path('mensajes/responder/<int:mensaje_id>/', views.responder_mensaje, name='responder_mensaje'),
+    path('mis-respuestas/', views.ver_respuestas_usuario, name='ver_respuestas_usuario'),
+    path('mensajes/eliminar/<int:mensaje_id>/', views.eliminar_mensaje, name='eliminar_mensaje'),
+
+    
+    
 
 ]

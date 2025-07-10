@@ -1,0 +1,107 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Mis Respuestas - Ferremas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{% static 'css/inicio.css' %}" rel="stylesheet">
+    <style>
+        .contact-container {
+            max-width: 600px;
+            margin: 0 auto;
+            margin-top: 50px;
+            background-color: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .center-text {
+            text-align: center;
+        }
+
+        textarea {
+            resize: none;
+            height: 150px;
+        }
+    </style>
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-warning" href="{% url 'inicio' %}">
+                <img src="{% static 'ferremas/logo.png' %}" alt="Ferremas" width="3" height="30"
+                    class="d-inline-block align-text-top">
+                Ferremas
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'logout' %}">Cerrar Sesión</a>
+                    </li>
+
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="flex-grow-1">
+        <div class="container py-5">
+            <h1 class="mb-4 text-primary">📬 Mis Mensajes y Respuestas</h1>
+
+            {% if mensajes %}
+            {% for mensaje in mensajes %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <strong>Mensaje enviado el:</strong> {{ mensaje.fecha_envio }}
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ mensaje.mensaje }}</p>
+
+                    {% if mensaje.respuestas.all %}
+                    <hr>
+                    <h5>Respuestas:</h5>
+                    {% for respuesta in mensaje.respuestas.all %}
+                    <div class="alert alert-info mt-3">
+                        <p>{{ respuesta.respuesta }}</p>
+                        <small class="text-muted">
+                            Respondido por {{ respuesta.administrador.username }}
+                            el {{ respuesta.fecha_respuesta }}
+                        </small>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="alert alert-warning">
+                        Aún no hay respuestas a este mensaje.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="alert alert-info">No has enviado ningún mensaje aún.</div>
+            {% endif %}
+
+            <a href="{% url 'inicio' %}" class="btn btn-outline-secondary">Volver al inicio</a>
+        </div>
+    </main>
+
+    <!-- FOOTER (igual que en ver_mensajes.html) -->
+    <footer class="bg-dark text-white text-center py-4 mt-auto">
+        <!-- ... mismo footer ... -->
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

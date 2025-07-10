@@ -1,13 +1,25 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+from django.db import models
+from django.contrib.auth.models import User
+
 class MensajeContacto(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)
     mensaje = models.TextField()
     fecha_envio = models.DateTimeField(auto_now_add=True)
-
+    
     def __str__(self):
-        return f"Mensaje de {self.usuario.username} - {self.usuario.email}"
+        return f"Mensaje de {self.usuario.username}"
+
+class RespuestaMensaje(models.Model):
+    mensaje_original = models.ForeignKey(MensajeContacto, on_delete=models.CASCADE, related_name='respuestas')
+    administrador = models.ForeignKey(User, on_delete=models.CASCADE)
+    respuesta = models.TextField()
+    fecha_respuesta = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Respuesta a {self.mensaje_original.usuario.username}"
 
 class Herramienta(models.Model):
     CATEGORIAS = [
