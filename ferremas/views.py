@@ -82,6 +82,7 @@ def ver_mensajes(request):
 @login_required
 def responder_mensaje(request, mensaje_id):
     mensaje = get_object_or_404(MensajeContacto, id=mensaje_id)
+    
     if request.method == 'POST':
         form = RespuestaMensajeForm(request.POST)
         if form.is_valid():
@@ -89,8 +90,20 @@ def responder_mensaje(request, mensaje_id):
             respuesta.mensaje_original = mensaje
             respuesta.administrador = request.user
             respuesta.save()
+            
+            # Marcar el mensaje como respondido
+            mensaje.respondido = True
+            mensaje.save()
+            
+            messages.success(request, 'Respuesta enviada correctamente')
             return redirect('ver_mensajes')
-    return redirect('ver_mensajes')
+    else:
+        form = RespuestaMensajeForm()
+    
+    # Pasar el formulario al template si no es POST
+    return render(request, 'ver_mensajes.html', {
+        'form_respuesta': form
+    })
 
 @login_required
 def ver_respuestas_usuario(request):

@@ -39,60 +39,6 @@
         <div class="container py-5">
             <h1 class="mb-4 text-primary">📬 Mensajes de Contacto</h1>
 
-            <div class="card mb-4">
-    <div class="card-body">
-        <form method="get" class="row g-3">
-            <!-- Búsqueda por contenido -->
-            <div class="col-md-4">
-                <input 
-                    type="text" 
-                    name="search" 
-                    class="form-control" 
-                    placeholder="Buscar en mensajes..."
-                    value="{{ search_query }}"
-                >
-            </div>
-            
-            <!-- Filtro por usuario (dropdown) -->
-            <div class="col-md-3">
-                <input 
-                    type="text" 
-                    name="usuario" 
-                    class="form-control" 
-                    placeholder="Filtrar por usuario"
-                    value="{{ usuario_filter }}"
-                >
-            </div>
-            
-            <!-- Filtro por tipo -->
-            <div class="col-md-3">
-                <select name="tipo" class="form-select">
-                    <option value="">Todos los tipos</option>
-                    <option value="duda" {% if tipo_filter == 'duda' %}selected{% endif %}>Duda</option>
-                    <option value="queja" {% if tipo_filter == 'queja' %}selected{% endif %}>Queja</option>
-                    <option value="sugerencia" {% if tipo_filter == 'sugerencia' %}selected{% endif %}>Sugerencia</option>
-                </select>
-            </div>
-            
-            <!-- Botones -->
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-funnel"></i> Filtrar
-                </button>
-            </div>
-        </form>
-        
-        <!-- Resetear filtros -->
-        {% if search_query or usuario_filter or tipo_filter %}
-        <div class="mt-3">
-            <a href="{% url 'ver_mensajes' %}" class="btn btn-sm btn-outline-secondary">
-                Limpiar filtros
-            </a>
-        </div>
-        {% endif %}
-    </div>
-</div>
-
             {% if mensajes %}
             <div class="table-responsive">
                 <table class="table table-bordered table-hover bg-white shadow">
@@ -100,7 +46,6 @@
                         <tr>
                             <th>Usuario</th>
                             <th>Correo</th>
-                            <th>Tipo</th>
                             <th>Mensaje</th>
                             <th>Fecha</th>
                             <th>Estado</th>
@@ -112,7 +57,6 @@
                         <tr>
                             <td>{{ mensaje.usuario.username }}</td>
                             <td>{{ mensaje.usuario.email }}</td>
-                            <td>{{ mensaje.get_tipo_display }}</td>
                             <td>{{ mensaje.mensaje }}</td>
                             <td>{{ mensaje.fecha_envio }}</td>
                             <td>
@@ -154,9 +98,14 @@
                                             {% csrf_token %}
                                             <div class="mb-3">
                                                 <label class="form-label">Mensaje original:</label>
-                                                <textarea class="form-control" readonly>{{ mensaje.mensaje }}</textarea>
+                                                <textarea class="form-control" readonly
+                                                    rows="3">{{ mensaje.mensaje }}</textarea>
                                             </div>
-                                            {{ form_respuesta.as_p }}
+                                            <div class="mb-3">
+                                                <label class="form-label">Tu respuesta:</label>
+                                                <textarea name="respuesta" class="form-control" rows="5"
+                                                    required></textarea>
+                                            </div>
                                         </div>
                                         <div class="modal-footer">
                                             <button type="button" class="btn btn-secondary"
@@ -174,6 +123,7 @@
             {% else %}
             <div class="alert alert-info">No hay mensajes de contacto.</div>
             {% endif %}
+
         </div>
     </main>
 

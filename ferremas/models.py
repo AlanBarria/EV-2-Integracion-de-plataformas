@@ -15,6 +15,7 @@ class MensajeContacto(models.Model):
     tipo = models.CharField(max_length=20, choices=TIPO_MENSAJE, default='duda')
     mensaje = models.TextField()
     fecha_envio = models.DateTimeField(auto_now_add=True)
+    respondido = models.BooleanField(default=False)  # Asegúrate de tener este campo
     
     def __str__(self):
         return f"{self.get_tipo_display()} de {self.usuario.username}"
